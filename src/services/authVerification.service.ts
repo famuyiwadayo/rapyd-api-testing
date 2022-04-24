@@ -57,7 +57,7 @@ export default class AuthVerificationService {
     accountId: string,
     reason: AuthVerificationReason
   ): Promise<AuthVerification> {
-    const timeout = 1; // in minutes, should be 60.
+    const timeout = 1; // in minutes, should be 10.
     let verification = await this.getPreviousVerificationIfValid(
       accountId,
       reason

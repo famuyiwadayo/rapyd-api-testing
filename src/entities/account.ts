@@ -8,38 +8,15 @@ import {
 import { Gender } from "../valueObjects";
 import BaseEntity from "./base";
 import { Role } from "./role";
-
-@modelOptions({ schemaOptions: { timestamps: true } })
-export class AccountVoteTracker extends BaseEntity {
-  @prop()
-  lastVoted?: Date;
-
-  @prop()
-  nextVotingTime?: Date;
-
-  // @prop()
-}
-
 export class AccountControl {
   @prop({ default: false })
   enabled: boolean;
-}
-
-export class AccountVote {
-  @prop()
-  next?: Date;
-
-  @prop()
-  last?: Date;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Account extends BaseEntity {
   @prop()
   firstName: string;
-
-  @prop()
-  middleName?: string;
 
   @prop()
   lastName: string;
@@ -62,9 +39,6 @@ export class Account extends BaseEntity {
   @prop()
   phone?: string;
 
-  @prop()
-  userName?: string;
-
   @prop({ ref: () => Role })
   roles?: Ref<Role>[];
 
@@ -73,9 +47,6 @@ export class Account extends BaseEntity {
 
   @prop({ default: false })
   isEmailVerified?: boolean;
-
-  @prop({ type: () => AccountVote })
-  vote?: AccountVote;
 
   @prop({ index: true, unique: true })
   refCode: string;

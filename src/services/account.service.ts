@@ -108,11 +108,11 @@ export default class AccountService {
     ];
     await Promise.all(toRun);
 
-    const data = await account.findById(id).lean().exec();
+    let data = await account.findById(id).lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
-      await account
-        .findByIdAndUpdate(id, { refCode: nanoid(12) })
+      data = await account
+        .findByIdAndUpdate(id, { refCode: nanoid(12) }, { new: true })
         .lean()
         .exec();
 
@@ -123,7 +123,11 @@ export default class AccountService {
     const toRun = [
       AccountService.removeDeprecatedAccountRoles(id, roles),
       RoleService.requiresPermission(
-        [AvailableRole.SUPERADMIN, AvailableRole.PREMIUM, AvailableRole.BASIC],
+        [
+          AvailableRole.DRIVER,
+          AvailableRole.MODERATOR,
+          AvailableRole.SUPERADMIN,
+        ],
         roles,
         AvailableResource.ACCOUNT,
         [PermissionScope.READ, PermissionScope.ALL]
@@ -131,11 +135,11 @@ export default class AccountService {
     ];
     await Promise.all(toRun);
 
-    const data = await account.findById(id).lean().exec();
+    let data = await account.findById(id).lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
-      await account
-        .findByIdAndUpdate(id, { refCode: nanoid(12) })
+      data = await account
+        .findByIdAndUpdate(id, { refCode: nanoid(12) }, { new: true })
         .lean()
         .exec();
 

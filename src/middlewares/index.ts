@@ -1,7 +1,7 @@
 import consola from "consola";
 import { NextFunction, Request, Response } from "express";
 export { catchRequest, handleError } from "./catchInvalidRequests";
-export { authGuard } from "./guards";
+export { authGuard, deviceGuard } from "./guards";
 export { default as compressor } from "./compression";
 
 export const logRequests = (req: Request, _: Response, next: NextFunction) => {

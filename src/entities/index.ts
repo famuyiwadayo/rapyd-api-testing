@@ -13,3 +13,15 @@ export {
   default as authVerification,
   AuthVerification,
 } from "./authVerification";
+
+export {
+  default as onboarding,
+  Onboarding,
+  Biodata,
+  DocumentUpload,
+  PersonalInfo,
+  NextOfKin,
+  SecurityQuestions,
+  Guarantor,
+  Phone,
+} from "./onboarding";

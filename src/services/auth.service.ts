@@ -17,40 +17,46 @@ import {
   AuthVerificationService,
   // ReferralService,
 } from "../services";
-import config from "../config/config";
+import config from "../config";
 import { AvailableRole } from "../entities/role";
 import { AuthVerificationReason } from "../valueObjects";
 
 export default class AuthService {
   private accountService = new AccountService();
 
-  async login(data: loginDto): Promise<Auth> {
+  async login(data: loginDto, deviceId: string): Promise<Auth> {
     // validateFields(data);
+    console.log("DEVICE ID", deviceId);
     const acc = await this.accountService.findByLogin(
       data.email,
       data.password
     );
     const payload = AuthService.transformUserToPayload(acc);
-    const { token, expiration } = await this.addToken(payload);
+    const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
     return { payload, token };
   }
 
-  async register(data: registerDto, roles?: string[]): Promise<Auth> {
+  async register(
+    data: registerDto,
+    deviceId: string,
+    roles?: string[]
+  ): Promise<Auth> {
     // validateFields(data);
 
     if (await this.accountService.checkEmailExists(data.email))
       throw createError("Email already exist", 400);
     const acc = await this.accountService.createAccount(data, roles);
     const payload = AuthService.transformUserToPayload(acc);
-    const { token, expiration } = await this.addToken(payload);
+    const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
     return { payload, token };
   }
 
   async registerWithRole(
     data: registerDto,
-    role: AvailableRole
+    role: AvailableRole,
+    deviceId: string
   ): Promise<Auth> {
     if (await this.accountService.checkEmailExists(data.email))
       throw createError("Email already exist", 400);
@@ -60,7 +66,7 @@ export default class AuthService {
     // if (data?.refCode) await ReferralService.createRef(data.refCode, acc?._id);
 
     const payload = AuthService.transformUserToPayload(acc);
-    const { token, expiration } = await this.addToken(payload);
+    const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
 
     console.log(`Registered new user with refCode ${data?.refCode}`);
@@ -80,21 +86,25 @@ export default class AuthService {
   async verifyEmail(
     accountId: string,
     code: string,
-    roles: string[]
+    roles: string[],
+    deviceId: string
   ): Promise<Auth> {
     const acc = await this.accountService.verifyEmail(
       { accountId, code },
       roles
     );
     const payload = AuthService.transformUserToPayload(acc);
-    const { token, expiration } = await this.addToken(payload);
+    const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
     return { payload, token };
   }
 
-  async validateAuthCode(token: string): Promise<AuthPayload> {
+  async validateAuthCode(
+    token: string,
+    deviceId: string
+  ): Promise<AuthPayload> {
     const auth = await authToken
-      .findOne({ token })
+      .findOne({ token, deviceId })
       .select("token")
       .lean()
       .exec();
@@ -131,13 +141,19 @@ export default class AuthService {
   }
 
   private async addToken(
-    payload: AuthPayload
+    payload: AuthPayload,
+    deviceId: string
   ): Promise<{ token: string; expiration: number }> {
     const jwt = AuthService.generateToken(payload);
     await authToken
       .findOneAndUpdate(
         { accountId: payload.sub },
-        { token: jwt.token, lastLogin: new Date(), exp: jwt.expiration },
+        {
+          token: jwt.token,
+          lastLogin: new Date(),
+          exp: jwt.expiration,
+          deviceId,
+        },
         getUpdateOptions()
       )
       .lean()

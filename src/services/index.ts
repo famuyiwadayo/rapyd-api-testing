@@ -5,4 +5,5 @@ export { default as PasswordService } from "./password.service";
 export { default as EmailService } from "./email.service";
 export { default as SystemService } from "./system.service";
 export { default as AccessService } from "./access.service";
+export { default as OnboardingService } from "./onboarding.service";
 export { default as AuthVerificationService } from "./authVerification.service";

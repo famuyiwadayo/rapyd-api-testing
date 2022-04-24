@@ -22,15 +22,11 @@ const defaultAccessControls: AccessControlType = {
         ],
       },
       {
-        name: AvailableResource.VOTE,
-        scopes: [PermissionScope.VOTE],
-      },
-      {
-        name: AvailableResource.EARNING,
+        name: AvailableResource.ONBOARDING,
         scopes: [
-          PermissionScope.EARN,
-          PermissionScope.REDEEM,
+          PermissionScope.CREATE,
           PermissionScope.READ,
+          PermissionScope.UPDATE,
         ],
       },
     ],
@@ -46,7 +42,7 @@ const defaultAccessControls: AccessControlType = {
         ],
       },
       {
-        name: AvailableResource.COIN,
+        name: AvailableResource.ONBOARDING,
         scopes: [
           PermissionScope.CREATE,
           PermissionScope.READ,
@@ -62,15 +58,11 @@ const defaultAccessControls: AccessControlType = {
         scopes: [PermissionScope.ALL],
       },
       {
-        name: AvailableResource.COIN,
+        name: AvailableResource.ONBOARDING,
         scopes: [PermissionScope.ALL],
       },
       {
         name: AvailableResource.ROLE,
-        scopes: [PermissionScope.ALL],
-      },
-      {
-        name: AvailableResource.VOTE,
         scopes: [PermissionScope.ALL],
       },
     ],

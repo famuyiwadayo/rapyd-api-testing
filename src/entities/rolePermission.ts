@@ -14,7 +14,7 @@ import { Role } from "./role";
 export enum AvailableResource {
   ACCOUNT = "account",
   ROLE = "role",
-  COIN = "coin",
+  ONBOARDING = "onboarding",
   VOTE = "vote",
   EARNING = "earning",
 }

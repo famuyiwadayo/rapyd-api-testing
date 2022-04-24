@@ -1,6 +1,6 @@
-// import AccountRouter from "./account.routes";
-// import AuthRouter from "./auth.routes";
-// import RoleRouter from "./role.routes";
+import AccountRouter from "./account.routes";
+import AuthRouter from "./auth.routes";
+import OnboardingRouter from "./onboarding.routes";
 // import EmailRouter from "./email.routes";
 // import CoinRouter from "./coin.routes";
 // import VoteRouter from "./vote.routes";
@@ -14,8 +14,9 @@ import { sendResponse } from "../utils";
 
 const routes = Router();
 
-// routes.use("/accounts", AccountRouter);
-// routes.use("/auth", AuthRouter);
+routes.use("/onboarding", OnboardingRouter);
+routes.use("/accounts", AccountRouter);
+routes.use("/auth", AuthRouter);
 // routes.use("/roles", RoleRouter);
 // routes.use("/emails", EmailRouter);
 // routes.use("/coins", CoinRouter);

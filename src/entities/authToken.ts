@@ -11,11 +11,14 @@ export class AuthToken extends BaseEntity {
   @prop()
   exp: number;
 
-  @prop({ index: true, unique: true })
+  @prop({ index: true })
   accountId: string;
 
   @prop()
   lastLogin: Date;
+
+  @prop({ index: true })
+  deviceId: string;
 }
 
 export default getModelForClass(AuthToken);

@@ -1,0 +1,10 @@
+export { default as AuthController } from "./auth.controller";
+export { default as AccountController } from "./account.controller";
+export { default as RoleController } from "./role.controller";
+export { default as EmailController } from "./email.controller";
+export { default as OnboardingController } from "./onboarding.controller";
+// export { default as VoteController } from "./vote.controller";
+// export { default as CoinController } from "./coin.controller";
+// export { default as EarningController } from "./earning.controller";
+// export { default as MarketCapController } from "./marketCap.controller";
+// export { default as RegistrationRequestController } from "./registrationRequest.controller";
