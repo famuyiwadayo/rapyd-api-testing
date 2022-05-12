@@ -14,6 +14,23 @@ const defaultAccessControls: AccessControlType = {
   driver: {
     permissions: [
       {
+        name: AvailableResource.CAR,
+        scopes: [PermissionScope.READ],
+      },
+      {
+        name: AvailableResource.COMPLAINT,
+        scopes: [
+          PermissionScope.READ,
+          PermissionScope.CREATE,
+          PermissionScope.UPDATE,
+          PermissionScope.DELETE,
+        ],
+      },
+      {
+        name: AvailableResource.COMPLAINT_FEEDBACK,
+        scopes: [PermissionScope.READ],
+      },
+      {
         name: AvailableResource.ACCOUNT,
         scopes: [
           PermissionScope.READ,
@@ -28,12 +45,33 @@ const defaultAccessControls: AccessControlType = {
           PermissionScope.READ,
           PermissionScope.UPDATE,
         ],
+      },
+      {
+        name: AvailableResource.PAYMENT_ITEM,
+        scopes: [PermissionScope.READ],
       },
     ],
   },
   moderator: {
     permissions: [
       {
+        name: AvailableResource.CAR,
+        scopes: [PermissionScope.READ],
+      },
+      {
+        name: AvailableResource.COMPLAINT,
+        scopes: [PermissionScope.READ],
+      },
+      {
+        name: AvailableResource.COMPLAINT_FEEDBACK,
+        scopes: [
+          PermissionScope.READ,
+          PermissionScope.CREATE,
+          PermissionScope.UPDATE,
+          PermissionScope.DELETE,
+        ],
+      },
+      {
         name: AvailableResource.ACCOUNT,
         scopes: [
           PermissionScope.READ,
@@ -49,10 +87,26 @@ const defaultAccessControls: AccessControlType = {
           PermissionScope.UPDATE,
         ],
       },
+      {
+        name: AvailableResource.PAYMENT_ITEM,
+        scopes: [PermissionScope.READ],
+      },
     ],
   },
   superadmin: {
     permissions: [
+      {
+        name: AvailableResource.COMPLAINT_FEEDBACK,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.CAR,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.COMPLAINT,
+        scopes: [PermissionScope.ALL],
+      },
       {
         name: AvailableResource.ACCOUNT,
         scopes: [PermissionScope.ALL],
@@ -63,6 +117,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.ROLE,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.PAYMENT_ITEM,
         scopes: [PermissionScope.ALL],
       },
     ],

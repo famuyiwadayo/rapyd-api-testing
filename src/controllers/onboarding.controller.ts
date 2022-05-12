@@ -12,7 +12,11 @@ export default class OnboardingController {
   ) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.getDriverOnboardingInfo(sub, roles);
+      const data = await service.getDriverOnboardingInfo(
+        sub,
+        roles,
+        req.query.dryRun as any
+      );
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -29,10 +33,30 @@ export default class OnboardingController {
     }
   }
 
+  async addGuarantors(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sub, roles } = req.user;
+      const data = await service.addGuarantors(sub, req.body, roles);
+      sendResponse(res, 201, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async createDocuments(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
       const data = await service.createDocumentUpload(sub, req.body, roles);
+      sendResponse(res, 201, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async makePayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sub, roles } = req.user;
+      const data = await service.makePayment(sub, req.body, roles);
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);

@@ -1,7 +1,10 @@
+export { default as CarController } from "./car.controller";
 export { default as AuthController } from "./auth.controller";
-export { default as AccountController } from "./account.controller";
 export { default as RoleController } from "./role.controller";
 export { default as EmailController } from "./email.controller";
+export { default as PaymentController } from "./payment.controller";
+export { default as AccountController } from "./account.controller";
+export { default as ComplaintController } from "./complaint.controller";
 export { default as OnboardingController } from "./onboarding.controller";
 // export { default as VoteController } from "./vote.controller";
 // export { default as CoinController } from "./coin.controller";

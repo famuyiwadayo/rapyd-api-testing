@@ -101,7 +101,8 @@ export default class AccountController {
     try {
       const result = await service.updatePrimaryRole(
         req.params.id,
-        req.body.role
+        req.body.role,
+        req.user.roles
       );
       sendResponse(res, 200, result);
     } catch (error) {

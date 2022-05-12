@@ -214,6 +214,7 @@ export default class RoleService {
   async getPermissions(roleId: string): Promise<Permission[]> {
     return (await permission
       .find({ role: roleId })
+      .populate(["resource"])
       .lean()
       .exec()) as Permission[];
   }

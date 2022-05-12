@@ -7,6 +7,13 @@ import {
 import { Gender } from "../valueObjects";
 import { Account } from "./account";
 import BaseEntity from "./base";
+import { TransactionReference } from "./transactionReference";
+
+export enum ApplicationStatusEnum {
+  VERIFIED = "verified",
+  DECLINED = "declined",
+  PENDING = "pending",
+}
 
 export class Phone {
   @prop()
@@ -123,8 +130,8 @@ export class Biodata extends BaseEntity {
   @prop({ type: () => SecurityQuestions })
   securityQuestions: SecurityQuestions;
 
-  @prop({ type: () => SecurityQuestions })
-  background: SecurityQuestions;
+  @prop({ type: () => Background })
+  background: Background;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -145,16 +152,39 @@ export class DocumentUpload extends BaseEntity {
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Guarantor extends BaseEntity {
   @prop()
-  driversLicense: string;
+  name: string;
 
   @prop()
-  utilityBill: string;
+  email: string;
+
+  @prop({ type: () => Phone, _id: false })
+  phone: Phone;
+}
+
+export class ApplicationStatus extends BaseEntity {
+  @prop({ enum: ApplicationStatusEnum })
+  level1: ApplicationStatusEnum;
+
+  @prop({ enum: ApplicationStatusEnum })
+  level2: ApplicationStatusEnum;
+}
+
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class PaymentInfo extends BaseEntity {
+  @prop({ ref: () => TransactionReference })
+  txRef: Ref<TransactionReference>;
 
   @prop()
-  identity: string;
+  paid: boolean;
+}
+
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class HirePurchaseContract extends BaseEntity {
+  @prop()
+  document: string;
 
   @prop()
-  faceShot: string;
+  consented: boolean;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -165,26 +195,76 @@ export class Onboarding extends BaseEntity {
   @prop({ _id: false, type: () => DocumentUpload })
   documents: DocumentUpload;
 
+  @prop({ type: () => Guarantor })
+  guarantors: Guarantor[];
+
+  @prop({ type: () => ApplicationStatus })
+  applicationStatus: ApplicationStatus;
+
+  @prop({ type: () => HirePurchaseContract })
+  hirePurchaseContract: HirePurchaseContract;
+
   @prop({ ref: () => Account })
   account: Ref<Account>;
+
+  @prop()
+  rapydId: string;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
+
+  @prop({ type: () => PaymentInfo })
+  payment: PaymentInfo;
+
+  @prop()
+  rejectionReason: string;
 }
 
 export default getModelForClass(Onboarding);
 
-// "securityQuestions": {
+/// ONBOARDING BIODATA REQUEST.
+// {
+//     "personalInfo": {
+//         "dob": "1994-07-09",
+//         "sex": "male",
+//         "maritalStatus": "single",
+//         "stateOfOrigin": "oyo",
+//         "phone": {
+//             "home": "0000000000",
+//             "work": "0000000000"
+//         },
+//         "lga": "ikeja",
+//         "village": "ikeja",
+//         "bvn": "00000000000"
+//     },
+//     "nextOfKin": {
+//         "firstName": "Ayo",
+//         "lastName": "Umaru",
+//         "dob": "2000-07-09",
+//         "sex": "male",
+//         "relationshipWithApplicant": "brother",
+//         "address": "407 Rue",
+//         "phone": {
+//             "home": "0000000000",
+//             "work":"0000000000"
+//         },
+//         "email": "ayo@gmail.com"
+//     },
+//     "securityQuestions": {
 //         "hasBeenArrested": false,
-//         "reasonForArrest": "",
-//         "hasBeenBannedAsADriver": "",
-//         "hasOutstandingDebt": "",
-//         "isMemberOfOrganization": "",
-//         "registeredAccountPhones": "",
-//         "registeredAccountEmails": "",
-//         "licenseNo": "",
-//         "dateIssued": ""
+//         "reasonForArrest": null,
+//         "hasBeenBannedAsADriver": false,
+//         "hasOutstandingDebt": false,
+//         "isMemberOfOrganization": false,
+//         "registeredAccountPhones": ["0000000000", "0000000000"],
+//         "registeredAccountEmails": ["a@gmail.com", "b@gmail.com"],
+//         "licenseNo": "A089123423",
+//         "dateIssued": "2019-04-24"
 //     },
 //     "background": {
-//         "educationalQualification": "",
-//         "yearsOfDrivingExperience": "",
-//         "hasBeenAnEHailingDriver": "",
-//         "yearsOfEHailingExperience": ""
+//         "educationalQualification": "Bsc",
+//         "yearsOfDrivingExperience": "5",
+//         "hasBeenAnEHailingDriver": true,
+//         "yearsOfEHailingExperience": "10"
 //     }
+// }

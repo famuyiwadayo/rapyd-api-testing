@@ -9,7 +9,7 @@ import {
 } from "../interfaces/dtos";
 import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
 import { account, Account } from "../entities";
-import { createError, paginate } from "../utils";
+import { createError, paginate, removeForcedInputs } from "../utils";
 import {
   PasswordService,
   RoleService,
@@ -35,6 +35,7 @@ export default class AccountService {
       control: { enabled: true },
       refCode: nanoid(12),
       roles: roles ?? [],
+      rapydId: AuthVerificationService.generateCode(),
     })) as Account;
     await this.passwordService.addPassword(acc._id!, input.password);
     roles && roles[0] && (await this.updatePrimaryRole(acc._id!, roles[0]));
@@ -55,19 +56,33 @@ export default class AccountService {
       AvailableResource.ACCOUNT,
       [PermissionScope.READ, PermissionScope.ALL]
     );
-    const queries = filters?.role
-      ? {
-          $or: [
-            {
-              primaryRole: filters.role,
-            },
-          ],
-        }
-      : {};
+
+    let queries: any = {};
+
+    // this is probably gonna make operations a tardy bit slower.
+    // aggregation could be used here to make it faster.
+    if (filters?.role) {
+      const roleFilter = String(filters.role).split(",");
+      const _roles = await RoleService.getRoleBySlugs(roleFilter);
+
+      queries?.$or = [];
+      queries.$or.push({ roles: { $in: _roles?.map((r) => r?._id) } });
+    }
     return await paginate("account", queries, filters);
   }
 
-  async updatePrimaryRole(id: string, role: string): Promise<Account> {
+  async updatePrimaryRole(
+    id: string,
+    role: string,
+    roles: string[]
+  ): Promise<Account> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
     const res = await RoleService.getRoleById(role);
     const acc = (await account
       .findOneAndUpdate({ _id: id }, { primaryRole: res.slug }, { new: true })
@@ -147,6 +162,9 @@ export default class AccountService {
   }
 
   async updateAccount(id: string, roles: string[], input: UpdateAccountDto) {
+    input = AccountService.removeUpdateForcedInputs(input);
+    if (isEmpty(input)) throw createError("No valid input", 404);
+
     await RoleService.hasPermission(roles, AvailableResource.ACCOUNT, [
       PermissionScope.UPDATE,
       PermissionScope.ALL,
@@ -155,7 +173,7 @@ export default class AccountService {
       .findOneAndUpdate({ _id: id }, { ...input }, { new: true })
       .lean()
       .exec();
-    if (!data) throw createError(`Not found`, 404);
+    if (!data) throw createError(`Account not found`, 404);
     return data;
   }
 
@@ -282,5 +300,22 @@ export default class AccountService {
   static async checkAccountExists(id: string): Promise<boolean> {
     const count = await account.countDocuments({ _id: id }).exec();
     return count > 0;
+  }
+
+  static removeUpdateForcedInputs(input: UpdateAccountDto) {
+    return removeForcedInputs<Account, UpdateAccountDto>(input, [
+      "_id",
+      "email",
+      "createdAt",
+      "updatedAt",
+      "password",
+      "isApproved",
+      "isEmailVerified",
+      "control",
+      "rapydId",
+      "roles",
+      "primaryRole",
+      "refCode",
+    ]);
   }
 }

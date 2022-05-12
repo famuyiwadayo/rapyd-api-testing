@@ -1,5 +1,4 @@
-import camelCase from "lodash/camelCase";
-
-const createSlug = (name: string) => camelCase(name);
+const createSlug = (name: string) =>
+  String(name).toLowerCase().split(" ").join("_");
 
 export default createSlug;

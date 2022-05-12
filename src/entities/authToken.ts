@@ -17,7 +17,7 @@ export class AuthToken extends BaseEntity {
   @prop()
   lastLogin: Date;
 
-  @prop({ index: true })
+  @prop()
   deviceId: string;
 }
 

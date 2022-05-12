@@ -147,7 +147,7 @@ export default class AuthService {
     const jwt = AuthService.generateToken(payload);
     await authToken
       .findOneAndUpdate(
-        { accountId: payload.sub },
+        { accountId: payload.sub, deviceId },
         {
           token: jwt.token,
           lastLogin: new Date(),

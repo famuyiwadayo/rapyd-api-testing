@@ -13,3 +13,6 @@ export { sendResponse } from "./response";
 export { default as makeRequest } from "./makeRequest";
 
 export { default as paginate } from "./paginate";
+export { default as removeForcedInputs } from "./removeForcedInputs";
+
+export { default as stripUpdateFields } from "./stripUpdateFields";

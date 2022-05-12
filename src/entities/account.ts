@@ -12,9 +12,25 @@ export class AccountControl {
   @prop({ default: false })
   enabled: boolean;
 }
+export class AccountLoan {
+  @prop({ default: false })
+  isEligible: boolean;
+
+  @prop()
+  minAmount: number;
+
+  @prop()
+  maxAmount: number;
+
+  @prop()
+  maxDuration: number;
+}
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Account extends BaseEntity {
+  @prop()
+  rapydId: string;
+
   @prop()
   firstName: string;
 
@@ -50,6 +66,14 @@ export class Account extends BaseEntity {
 
   @prop({ index: true, unique: true })
   refCode: string;
+
+  @prop({ default: false })
+  isApproved: boolean;
+
+  @prop({ type: () => AccountLoan })
+  loan: AccountLoan;
 }
 
 export default getModelForClass(Account);
+
+// isApproved, rapydId, password, control, roles, isEmailVerified, refCode, email

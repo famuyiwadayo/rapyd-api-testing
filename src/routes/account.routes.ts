@@ -13,14 +13,14 @@ router.get("/me", authGuard, controller.getCurrentUserAccount); // ✅
 router.get("/:id", authGuard, controller.accountById); // ✅
 
 // POST
-router.post("/", authGuard, controller.createAccount); // ✅
+// router.post("/", authGuard, controller.createAccount); // ✅
 
 // PUT
 router.put("/me", authGuard, controller.updateAccount); // ✅
 router.put("/password", authGuard, controller.changePassword); // ✅
 router.put("/:id/disable", authGuard, controller.disableAccount); // ✅
 router.put("/:id/enable", authGuard, controller.enableAccount); // ✅
-// router.put("/:id/primaryRole", authGuard, controller.updatePrimaryRole); // ✅
+router.put("/:id/primaryRole", authGuard, controller.updatePrimaryRole); // ✅
 
 // DELETE
 router.delete("/:id", authGuard, controller.deleteAccount); // ✅

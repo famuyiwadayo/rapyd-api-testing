@@ -5,3 +5,8 @@ export { default as PermissionScope } from "./Scopes";
 export { ApplicationScoreStatus, ApplicationStatus } from "./Application";
 export { default as DefaultAccessControls } from "./AccessControls";
 export { default as AuthVerificationReason } from "./AuthVerificationReason";
+
+export { default as TransactionReason } from "./TransactionReason";
+
+export { default as PaystackRoute } from "./PaystackRoute";
+export { PaystackStatus, PaystackChargeStatus } from "./Paystack";

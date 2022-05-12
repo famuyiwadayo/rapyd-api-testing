@@ -24,4 +24,24 @@ export {
   SecurityQuestions,
   Guarantor,
   Phone,
+  ApplicationStatus,
+  ApplicationStatusEnum,
+  HirePurchaseContract,
 } from "./onboarding";
+
+export { default as carColor, CarColor } from "./carColor";
+export { default as carFeature, CarFeature } from "./carFeature";
+export { default as car, Car, CarImage, CarImageMetadata } from "./car";
+
+export { default as complaint, Complaint } from "./complaint";
+export {
+  default as complaintFeedback,
+  ComplaintFeedback,
+} from "./complaintFeedback";
+
+export {
+  default as transactionReference,
+  TransactionReference,
+} from "./transactionReference";
+
+export { default as paymentItem, PaymentItem } from "./paymentItem";

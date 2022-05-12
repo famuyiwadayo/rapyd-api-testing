@@ -11,12 +11,16 @@ import { Resource } from "./resource";
 import BaseEntity from "./base";
 import { Role } from "./role";
 
+/// Don't use camelCase or PascalCase for Resource naming
+/// Use underscore separated names instead to make the role system work properly.
 export enum AvailableResource {
-  ACCOUNT = "account",
+  CAR = "car",
   ROLE = "role",
+  ACCOUNT = "account",
   ONBOARDING = "onboarding",
-  VOTE = "vote",
-  EARNING = "earning",
+  COMPLAINT = "complaint",
+  COMPLAINT_FEEDBACK = "complaint_feedback",
+  PAYMENT_ITEM = "payment_item",
 }
 
 class Scope {
