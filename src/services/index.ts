@@ -1,4 +1,4 @@
-export { default as CarService } from "./car.service";
+export { default as VehicleService } from "./vehicle.service";
 export { default as AuthService } from "./auth.service";
 export { default as RoleService } from "./role.service";
 export { default as EmailService } from "./email.service";

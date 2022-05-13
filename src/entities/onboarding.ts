@@ -7,6 +7,7 @@ import {
 import { Gender } from "../valueObjects";
 import { Account } from "./account";
 import BaseEntity from "./base";
+import { Vehicle } from "./vehicle";
 import { TransactionReference } from "./transactionReference";
 
 export enum ApplicationStatusEnum {
@@ -27,7 +28,7 @@ export class PersonalInfo {
   @prop()
   dob: Date;
 
-  @prop({ enum: Gender })
+  @prop({ enum: Gender, default: Gender.UNSPECIFIED })
   sex: Gender;
 
   @prop()
@@ -132,6 +133,9 @@ export class Biodata extends BaseEntity {
 
   @prop({ type: () => Background })
   background: Background;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -147,6 +151,9 @@ export class DocumentUpload extends BaseEntity {
 
   @prop()
   faceShot: string;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -159,6 +166,14 @@ export class Guarantor extends BaseEntity {
 
   @prop({ type: () => Phone, _id: false })
   phone: Phone;
+}
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class GuarantorInfo extends BaseEntity {
+  @prop({ type: () => Guarantor })
+  guarantors: Guarantor[];
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
 }
 
 export class ApplicationStatus extends BaseEntity {
@@ -175,9 +190,23 @@ export class PaymentInfo extends BaseEntity {
   txRef: Ref<TransactionReference>;
 
   @prop()
+  paymentRef: string;
+
+  @prop()
   paid: boolean;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
 }
 
+@modelOptions({ schemaOptions: { timestamps: true } })
+export class VehicleInfo extends BaseEntity {
+  @prop({ ref: () => Vehicle })
+  vehicle: Ref<Vehicle>;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
+}
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class HirePurchaseContract extends BaseEntity {
   @prop()
@@ -185,6 +214,9 @@ export class HirePurchaseContract extends BaseEntity {
 
   @prop()
   consented: boolean;
+
+  @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
+  status: ApplicationStatusEnum;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -195,8 +227,8 @@ export class Onboarding extends BaseEntity {
   @prop({ _id: false, type: () => DocumentUpload })
   documents: DocumentUpload;
 
-  @prop({ type: () => Guarantor })
-  guarantors: Guarantor[];
+  @prop({ type: () => GuarantorInfo })
+  guarantorInfo: GuarantorInfo;
 
   @prop({ type: () => ApplicationStatus })
   applicationStatus: ApplicationStatus;
@@ -215,6 +247,9 @@ export class Onboarding extends BaseEntity {
 
   @prop({ type: () => PaymentInfo })
   payment: PaymentInfo;
+
+  @prop({ type: () => VehicleInfo })
+  vehicleInfo: VehicleInfo;
 
   @prop()
   rejectionReason: string;

@@ -29,9 +29,15 @@ export {
   HirePurchaseContract,
 } from "./onboarding";
 
-export { default as carColor, CarColor } from "./carColor";
-export { default as carFeature, CarFeature } from "./carFeature";
-export { default as car, Car, CarImage, CarImageMetadata } from "./car";
+export { default as vehicleColor, VehicleColor } from "./vehicleColor";
+export { default as vehicleFeature, VehicleFeature } from "./vehicleFeature";
+export { default as vehicleType, VehicleType } from "./vehicleType";
+export {
+  default as vehicle,
+  Vehicle,
+  VehicleImage,
+  VehicleImageMetadata,
+} from "./vehicle";
 
 export { default as complaint, Complaint } from "./complaint";
 export {

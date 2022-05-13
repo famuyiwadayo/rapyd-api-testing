@@ -2,9 +2,10 @@ import { ReturnModelType, DocumentType } from "@typegoose/typegoose";
 import { createError } from "../utils";
 import {
   account,
-  car,
-  carColor,
-  carFeature,
+  vehicle,
+  vehicleColor,
+  vehicleFeature,
+  vehicleType,
   complaint,
   complaintFeedback,
 } from "../entities";
@@ -13,9 +14,10 @@ import capitalize from "lodash/capitalize";
 import consola from "consola";
 
 export type SchemaTypes =
-  | "car"
-  | "carColor"
-  | "carFeature"
+  | "vehicle"
+  | "vehicleColor"
+  | "vehicleFeature"
+  | "vehicleType"
   | "account"
   | "complaint"
   | "complaintFeedback";
@@ -46,11 +48,12 @@ export default class AccessService {
     schema: SchemaTypes
   ): ReturnModelType<DocumentType<any>, any> {
     const map: { [key in SchemaTypes]: DocumentType<any> } = {
-      car,
+      vehicle,
       account,
-      carColor,
-      carFeature,
+      vehicleColor,
+      vehicleFeature,
       complaint,
+      vehicleType,
       complaintFeedback,
     };
 

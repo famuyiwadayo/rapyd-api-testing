@@ -6,8 +6,9 @@ import {
   Ref,
 } from "@typegoose/typegoose";
 import BaseEntity from "./base";
-import { CarColor } from "./carColor";
-import { CarFeature } from "./carFeature";
+import { VehicleColor } from "./vehicleColor";
+import { VehicleFeature } from "./vehicleFeature";
+import { VehicleType } from "./vehicleType";
 
 export enum GearBox {
   MANUAL = "manual",
@@ -21,23 +22,23 @@ export enum FuelType {
   HYBRID = "hybrid",
 }
 
-export class CarImageMetadata {
+export class VehicleImageMetadata {
   @prop()
   isCover: boolean;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
-export class CarImage extends BaseEntity {
+export class VehicleImage extends BaseEntity {
   @prop()
   url: string;
 
-  @prop({ type: () => CarImageMetadata, _id: false })
-  metadata: CarImageMetadata;
+  @prop({ type: () => VehicleImageMetadata, _id: false })
+  metadata: VehicleImageMetadata;
 }
 
 @index({ "$**": "text" })
 @modelOptions({ schemaOptions: { timestamps: true } })
-export class Car extends BaseEntity {
+export class Vehicle extends BaseEntity {
   @prop()
   make: string;
 
@@ -62,11 +63,14 @@ export class Car extends BaseEntity {
   @prop({ enum: FuelType })
   fuelType: FuelType;
 
-  @prop({ ref: () => CarColor })
-  color: Ref<CarColor>;
+  @prop({ ref: () => VehicleColor })
+  color: Ref<VehicleColor>;
 
-  @prop({ ref: () => CarFeature })
-  features: Ref<CarFeature>[];
+  @prop({ ref: () => VehicleType })
+  type: Ref<VehicleType>;
+
+  @prop({ ref: () => VehicleFeature })
+  features: Ref<VehicleFeature>[];
 
   @prop()
   mileage: string; // in kilometers
@@ -77,11 +81,11 @@ export class Car extends BaseEntity {
   @prop()
   isAvailable: boolean;
 
-  @prop({ type: () => CarImage })
-  images: CarImage[];
+  @prop({ type: () => VehicleImage })
+  images: VehicleImage[];
 
   @prop()
   rapydId: string;
 }
 
-export default getModelForClass(Car);
+export default getModelForClass(Vehicle);

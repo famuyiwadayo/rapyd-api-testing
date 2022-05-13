@@ -15,13 +15,15 @@ export type {
   BiodataDto,
   DocumentUploadDto,
   AddGuarantorsDto,
+  ApplicationStatusDto,
 } from "./onboarding.dto";
 
 export type {
-  UpdateCarDto,
-  CreateCarDto,
-  CreateCarColorDto,
-  CreateCarFeatureDto,
+  UpdateVehicleDto,
+  CreateVehicleDto,
+  CreateVehicleColorDto,
+  CreateVehicleFeatureDto,
+  CreateVehicleTypeDto,
 } from "./car.dto";
 
 export type {

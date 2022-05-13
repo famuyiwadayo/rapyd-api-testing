@@ -14,7 +14,7 @@ const defaultAccessControls: AccessControlType = {
   driver: {
     permissions: [
       {
-        name: AvailableResource.CAR,
+        name: AvailableResource.VEHICLE,
         scopes: [PermissionScope.READ],
       },
       {
@@ -55,7 +55,7 @@ const defaultAccessControls: AccessControlType = {
   moderator: {
     permissions: [
       {
-        name: AvailableResource.CAR,
+        name: AvailableResource.VEHICLE,
         scopes: [PermissionScope.READ],
       },
       {
@@ -100,7 +100,7 @@ const defaultAccessControls: AccessControlType = {
         scopes: [PermissionScope.ALL],
       },
       {
-        name: AvailableResource.CAR,
+        name: AvailableResource.VEHICLE,
         scopes: [PermissionScope.ALL],
       },
       {

@@ -15,6 +15,7 @@ import { Role } from "./role";
 /// Use underscore separated names instead to make the role system work properly.
 export enum AvailableResource {
   CAR = "car",
+  VEHICLE = "vehicle",
   ROLE = "role",
   ACCOUNT = "account",
   ONBOARDING = "onboarding",

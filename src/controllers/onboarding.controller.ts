@@ -23,6 +23,20 @@ export default class OnboardingController {
     }
   }
 
+  async getApplicationStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sub, roles } = req.user;
+      const data = await service.getApplicationStatus(
+        sub,
+        roles,
+        req.query.dryRun as any
+      );
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async createBiodata(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
@@ -47,6 +61,34 @@ export default class OnboardingController {
     try {
       const { sub, roles } = req.user;
       const data = await service.createDocumentUpload(sub, req.body, roles);
+      sendResponse(res, 201, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async selectVehicle(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sub, roles } = req.user;
+      const data = await service.selectVehicle(
+        sub,
+        req.params.vehicleId,
+        roles
+      );
+      sendResponse(res, 201, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async hirePurchaseContract(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { sub, roles } = req.user;
+      const data = await service.createHirePurchaseContract(
+        sub,
+        req.body,
+        roles
+      );
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);

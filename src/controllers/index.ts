@@ -1,4 +1,4 @@
-export { default as CarController } from "./car.controller";
+export { default as VehicleController } from "./vehicle.controller";
 export { default as AuthController } from "./auth.controller";
 export { default as RoleController } from "./role.controller";
 export { default as EmailController } from "./email.controller";

@@ -2,9 +2,9 @@ import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
 import BaseEntity from "./base";
 
 @modelOptions({ schemaOptions: { timestamps: true } })
-export class CarFeature extends BaseEntity {
+export class VehicleColor extends BaseEntity {
   @prop()
-  name: string;
+  color: string;
 
   @prop()
   slug: string;
@@ -13,4 +13,4 @@ export class CarFeature extends BaseEntity {
   description: string;
 }
 
-export default getModelForClass(CarFeature);
+export default getModelForClass(VehicleColor);

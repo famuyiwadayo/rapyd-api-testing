@@ -16,6 +16,7 @@ import {
 } from "./src/middlewares";
 import { AuthPayload } from "./src/interfaces/ros";
 import SystemService from "./src/services/system.service";
+// import { Loan } from "./src/libs";
 
 declare global {
   namespace Express {
@@ -70,6 +71,13 @@ app.get("/", (_, res) =>
 // catch 404 and forward to error handler
 app.use(catchRequest);
 app.use(handleError);
+
+// const loan = new Loan();
+// console.log("LOAN", loan.calc(10115, 156, 3.24, 506, "WEEKLY"));
+// console.log(
+//   "WEEKLY PAYMENT",
+//   loan.getPeriodicPayment(10115, 156, 3.24, 506, "WEEKLY")
+// );
 
 // run and listen to server procs
 const run = async () => {

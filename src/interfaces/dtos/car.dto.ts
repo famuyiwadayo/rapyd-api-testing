@@ -1,7 +1,7 @@
-import { CarColor, CarFeature } from "entities";
-import { FuelType, GearBox, CarImage } from "../../entities/car";
+import { VehicleColor, VehicleFeature, VehicleType } from "../../entities";
+import { FuelType, GearBox, VehicleImage } from "../../entities/vehicle";
 
-export interface CreateCarDto {
+export interface CreateVehicleDto {
   make: string;
   model: string;
   year: string;
@@ -15,12 +15,13 @@ export interface CreateCarDto {
   mileage: string; // in kilometers
   description: string;
   available: boolean;
-  images: string[] | CarImage[];
+  images: string[] | VehicleImage[];
 }
 
-export interface UpdateCarDto extends Partial<CreateCarDto> {
+export interface UpdateVehicleDto extends Partial<CreateVehicleDto> {
   deleteImages?: string[];
 }
 
-export interface CreateCarColorDto extends Omit<CarColor, "slug"> {}
-export interface CreateCarFeatureDto extends Omit<CarFeature, "slug"> {}
+export interface CreateVehicleColorDto extends Omit<VehicleColor, "slug"> {}
+export interface CreateVehicleFeatureDto extends Omit<VehicleFeature, "slug"> {}
+export interface CreateVehicleTypeDto extends Omit<VehicleType, "slug"> {}

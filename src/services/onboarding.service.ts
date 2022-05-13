@@ -1,5 +1,6 @@
 import { RoleService } from "../services";
 import {
+  ApplicationStatusEnum,
   AvailableResource,
   AvailableRole,
   onboarding,
@@ -8,7 +9,7 @@ import {
   paymentItem,
 } from "../entities";
 import { PermissionScope, TransactionReason } from "../valueObjects";
-import { createError, getUpdateOptions } from "../utils";
+import { createError, getUpdateOptions, removeForcedInputs } from "../utils";
 
 import {
   BiodataDto,
@@ -25,6 +26,7 @@ import AuthVerificationService from "./authVerification.service";
 import { IPaystackInitTransactionResponse } from "../interfaces/ros";
 import PaymentService from "./payment.service";
 import config from "../config";
+import VehicleService from "./vehicle.service";
 
 type CreateOnboardingDataKeys = keyof Onboarding;
 
@@ -50,6 +52,42 @@ export default class OnboardingService {
     if (dryRun && !data) return {};
 
     return data;
+  }
+
+  async getApplicationStatus(
+    accountId: string,
+    roles: string[],
+    dryRun = false
+  ): Promise<{ level1: boolean; level2: boolean } | {}> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const data = await onboarding
+      .findOne({ account: accountId })
+      .lean<Onboarding>()
+      .exec();
+
+    if (!dryRun && !data) throw createError("Application not found", 404);
+    if (dryRun && !data) return {};
+
+    const level1 = !!(
+      data?.biodata &&
+      data?.documents &&
+      data?.guarantorInfo &&
+      data?.payment
+    );
+
+    const level2 =
+      data?.biodata?.status === ApplicationStatusEnum.VERIFIED &&
+      data?.documents?.status === ApplicationStatusEnum.VERIFIED &&
+      data?.guarantorInfo?.status === ApplicationStatusEnum.VERIFIED &&
+      data?.payment?.status === ApplicationStatusEnum.VERIFIED;
+
+    return { level1, level2 };
   }
 
   async createBiodata(
@@ -92,6 +130,42 @@ export default class OnboardingService {
     return documents;
   }
 
+  async selectVehicle(
+    accountId: string,
+    vehicleId: string,
+    roles: string[]
+  ): Promise<Onboarding> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
+    if (!VehicleService.checkVehicleExists(vehicleId))
+      throw createError("Vehicle not found", 404);
+
+    const application = await onboarding
+      .findOneAndUpdate(
+        { account: accountId },
+        {
+          vehicleInfo: { vehicle: vehicleId },
+        },
+        { new: true }
+      )
+      .lean<Onboarding>()
+      .exec();
+
+    if (!application) throw createError("Application not found", 404);
+    return application;
+
+    // return await OnboardingService.createOrUpdateData(
+    //   "carSelection",
+    //   accountId,
+    //   { car: vehicleId }
+    // );
+  }
+
   async addGuarantors(
     accountId: string,
     input: AddGuarantorsDto,
@@ -107,7 +181,7 @@ export default class OnboardingService {
     const data = await onboarding
       .findOneAndUpdate(
         { account: accountId },
-        { guarantors: input.guarantors },
+        { guarantorInfo: { guarantors: input.guarantors } },
         { new: true }
       )
       .lean<Onboarding>()
@@ -193,13 +267,48 @@ export default class OnboardingService {
         404
       );
 
-    return await new PaymentService().initTransaction(accountId, roles, {
+    return await OnboardingService.initiateApplicationPayment(
+      application,
+      input,
+      roles,
+      payItem?._id!,
+      accountId
+    );
+  }
+
+  protected static async initiateApplicationPayment(
+    application: Onboarding,
+    input: any,
+    roles: string[],
+    itemId: string,
+    accountId: string
+  ) {
+    if (application?.payment) {
+      if (!application.payment?.paid && !application.payment?.txRef)
+        await new PaymentService().checkStatus(application.payment?.paymentRef);
+
+      return (
+        await onboarding
+          .findOne({ account: accountId })
+          .lean<Onboarding>()
+          .exec()
+      ).payment;
+    }
+
+    const tx = await new PaymentService().initTransaction(accountId, roles, {
       amount: 0,
-      itemId: payItem._id!,
+      itemId,
       reason: TransactionReason.ONBOARDING_PAYMENT,
       callbackUrl: input.callbackUrl ?? config.paystackCallbackUrl,
       inline: input.inline ?? false,
     });
+
+    await OnboardingService.createOrUpdateData("payment", accountId, {
+      paymentRef: tx.data.reference,
+      paid: false,
+    });
+
+    return tx;
   }
 
   static async markOnboardingFeeAsPaid(
@@ -219,6 +328,9 @@ export default class OnboardingService {
     accountId: string,
     input: T
   ): Promise<Onboarding> {
+    input = removeForcedInputs(input as any, ["status"]);
+
+    console.log(input);
     let data = await onboarding
       .findOne({ account: accountId })
       .select([key, "rapydId"])

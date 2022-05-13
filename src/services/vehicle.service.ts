@@ -1,21 +1,24 @@
 import RoleService from "./role.service";
 import { PermissionScope } from "../valueObjects";
 import {
-  CreateCarColorDto,
-  CreateCarDto,
-  CreateCarFeatureDto,
-  UpdateCarDto,
+  CreateVehicleColorDto,
+  CreateVehicleDto,
+  CreateVehicleFeatureDto,
+  CreateVehicleTypeDto,
+  UpdateVehicleDto,
 } from "../interfaces/dtos";
 import {
-  car,
-  Car,
-  CarColor,
-  CarFeature,
+  vehicle,
+  Vehicle,
+  VehicleColor,
+  VehicleFeature,
   AvailableResource,
   AvailableRole,
-  CarImage,
-  carColor,
-  carFeature,
+  VehicleImage,
+  vehicleColor,
+  vehicleFeature,
+  VehicleType,
+  vehicleType,
 } from "../entities";
 import AuthVerificationService from "./authVerification.service";
 import AccessService from "./access.service";
@@ -33,21 +36,21 @@ import isEmpty from "lodash/isEmpty";
 import difference from "lodash/difference";
 // import { uniqBy } from "lodash";
 
-export default class CarService {
-  async getCars(
+export default class VehicleService {
+  async getVehicles(
     roles: string[],
     filters: IPaginationFilter & {
       fuelType?: string[];
-      features?: string[]; // coma separated string of car feature _ids
+      features?: string[]; // coma separated string of vehicle feature _ids
       gearbox?: string[];
-      color?: string[]; // coma separated string of car color _ids
+      color?: string[]; // coma separated string of vehicle color _ids
       make?: string[];
       model?: string[];
       year?: string; // hypen separated string of year, 2000 - 20222
       searchPhrase?: string;
     },
     dryRun?: boolean
-  ): Promise<PaginatedDocument<Car[]>> {
+  ): Promise<PaginatedDocument<Vehicle[]>> {
     if (!dryRun)
       await RoleService.requiresPermission(
         [
@@ -56,7 +59,7 @@ export default class CarService {
           AvailableRole.MODERATOR,
         ],
         roles,
-        AvailableResource.CAR,
+        AvailableResource.VEHICLE,
         [PermissionScope.READ, PermissionScope.ALL]
       );
 
@@ -125,149 +128,180 @@ export default class CarService {
 
     // console.log(JSON.stringify({ filters }));
 
-    return await paginate("car", queries, filters, {
+    return await paginate("vehicle", queries, filters, {
       populate: ["features", "color"],
     });
   }
 
-  async getCarById(carId: string, roles: string[]): Promise<Car> {
+  async getVehicleById(vehicleId: string, roles: string[]): Promise<Vehicle> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const _car = await car
-      .findById(carId)
-      .populate(["features", "color"])
-      .lean<Car>()
+    const _vehicle = await vehicle
+      .findById(vehicleId)
+      .populate(["features", "color", "type"])
+      .lean<Vehicle>()
       .exec();
-    if (!_car) throw createError("Car not found", 404);
-    return _car;
+    if (!_vehicle) throw createError("Vehicle not found", 404);
+    return _vehicle;
   }
 
-  async getSimilarCars(carId: string, roles: string[]): Promise<Car[]> {
+  async getSimilarVehicles(
+    vehicleId: string,
+    roles: string[]
+  ): Promise<Vehicle[]> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const _car = await car.findById(carId).lean<Car>().exec();
+    const _vehicle = await vehicle.findById(vehicleId).lean<Vehicle>().exec();
 
-    if (!_car) throw createError("Car not found", 404);
-    const similarCars = await this.getCars(
+    if (!_vehicle) throw createError("Vehicle not found", 404);
+    const similarVehicles = await this.getVehicles(
       roles,
       {
         limit: "10",
-        features: _car.features as string[],
-        make: [_car?.make],
-        // model: [_car?.model],
-        gearbox: [_car?.gearBox],
-        fuelType: [_car?.fuelType],
+        features: _vehicle.features as string[],
+        make: [_vehicle?.make],
+        // model: [_vehicle?.model],
+        gearbox: [_vehicle?.gearBox],
+        fuelType: [_vehicle?.fuelType],
       },
       true
     );
-    return similarCars?.data;
+    return similarVehicles?.data;
   }
 
-  async getCarColors(roles: string[]): Promise<CarColor[]> {
+  async getVehicleColors(roles: string[]): Promise<VehicleColor[]> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
     );
-    return await carColor.find().lean<CarColor[]>();
+    return await vehicleColor.find().lean<VehicleColor[]>().exec();
   }
 
-  async getCarFeatures(roles: string[]): Promise<CarFeature[]> {
+  async getVehicleTypes(roles: string[]): Promise<VehicleType[]> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
     );
-    return await carFeature.find().lean<CarFeature[]>();
+    return await vehicleType.find().lean<VehicleType[]>().exec();
   }
 
-  async createCar(input: CreateCarDto, roles: string[]): Promise<Car> {
+  async getVehicleFeatures(roles: string[]): Promise<VehicleFeature[]> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+    return await vehicleFeature.find().lean<VehicleFeature[]>();
+  }
+
+  async createVehicle(
+    input: CreateVehicleDto,
+    roles: string[]
+  ): Promise<Vehicle> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.CREATE, PermissionScope.ALL]
     );
 
     if (input?.images && typeof input.images[0] === "string")
-      input.images = CarService.transformImageStrings(
+      input.images = VehicleService.transformImageStrings(
         input?.images as string[]
       );
 
-    const _car = (await car.create({
+    const _vehicle = (await vehicle.create({
       ...input,
       rapydId: AuthVerificationService.generateCode(),
-    })) as Car;
-    return _car;
+    })) as Vehicle;
+    return _vehicle;
   }
 
-  async createCarColor(
-    input: CreateCarColorDto,
+  async createVehicleColor(
+    input: CreateVehicleColorDto,
     roles: string[]
-  ): Promise<CarColor> {
+  ): Promise<VehicleColor> {
     validateFields(input, ["color"]);
 
     const slug = createSlug(input?.color);
-    return (await CarService.createOrUpdateCarProperty(
-      "carColor",
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleColor",
       slug,
       input,
       roles
-    )) as CarColor;
+    )) as VehicleColor;
   }
 
-  async createCarFeature(
-    input: CreateCarFeatureDto,
+  async createVehicleType(
+    input: CreateVehicleTypeDto,
     roles: string[]
-  ): Promise<CarFeature> {
+  ): Promise<VehicleType> {
+    validateFields(input, ["name"]);
+
+    const slug = createSlug(input?.name);
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleType",
+      slug,
+      input,
+      roles
+    )) as VehicleType;
+  }
+
+  async createVehicleFeature(
+    input: CreateVehicleFeatureDto,
+    roles: string[]
+  ): Promise<VehicleFeature> {
     validateFields(input, ["name"]);
     const slug = createSlug(input?.name);
-    return (await CarService.createOrUpdateCarProperty(
-      "carFeature",
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleFeature",
       slug,
       input,
       roles
-    )) as CarFeature;
+    )) as VehicleFeature;
   }
 
-  async updateCar(
-    carId: string,
-    input: UpdateCarDto,
+  async updateVehicle(
+    vehicleId: string,
+    input: UpdateVehicleDto,
     roles: string[]
-  ): Promise<Car> {
+  ): Promise<Vehicle> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
     if (input.deleteImages && !isEmpty(input?.deleteImages)) {
-      await CarService.removeCarImages(carId, input.deleteImages);
+      await VehicleService.removeVehicleImages(vehicleId, input.deleteImages);
       delete input.deleteImages;
     }
 
-    let _car = await car.findById(carId).lean<Car>().exec();
+    let _vehicle = await vehicle.findById(vehicleId).lean<Vehicle>().exec();
 
     if (input?.images && typeof input.images[0] === "string") {
-      const newImages = CarService.treatIncomingCarImages(
-        _car?.images,
+      const newImages = VehicleService.treatIncomingVehicleImages(
+        _vehicle?.images,
         uniq(
           difference(
             input?.images as string[],
-            (_car?.images ?? [])?.map((i) =>
+            (_vehicle?.images ?? [])?.map((i) =>
               i?.metadata?.isCover ? `${i?.url}?cover=true` : i?.url
             )
           )
@@ -275,99 +309,140 @@ export default class CarService {
       );
 
       //   console.log(newImages);
-      input.images = !isEmpty(newImages) ? newImages : _car?.images;
+      input.images = !isEmpty(newImages) ? newImages : _vehicle?.images;
     }
 
     if (input?.features && !isEmpty(input?.features))
-      input.features = [...(_car?.features as string[]), ...input?.features];
+      input.features = [
+        ...(_vehicle?.features as string[]),
+        ...input?.features,
+      ];
 
-    _car = await car
-      .findByIdAndUpdate(carId, { ...input }, { new: true })
-      .lean<Car>()
+    _vehicle = await vehicle
+      .findByIdAndUpdate(vehicleId, { ...input }, { new: true })
+      .lean<Vehicle>()
       .exec();
-    return _car;
+    return _vehicle;
   }
 
-  async updateCarColor(
+  async updateVehicleColor(
     slug: string,
-    input: Partial<CreateCarColorDto>,
+    input: Partial<CreateVehicleColorDto>,
     roles: string[]
-  ): Promise<CarColor> {
-    return (await CarService.createOrUpdateCarProperty(
-      "carColor",
+  ): Promise<VehicleColor> {
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleColor",
       slug,
       { ...input, slug: input?.color ? createSlug(input?.color) : slug },
       roles
-    )) as CarColor;
+    )) as VehicleColor;
   }
 
-  async updateCarFeature(
+  async updateVehicleType(
     slug: string,
-    input: Partial<CreateCarFeatureDto>,
+    input: Partial<CreateVehicleTypeDto>,
     roles: string[]
-  ): Promise<CarFeature> {
-    return (await CarService.createOrUpdateCarProperty(
-      "carFeature",
+  ): Promise<VehicleType> {
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleType",
       slug,
       { ...input, slug: input?.name ? createSlug(input?.name) : slug },
       roles
-    )) as CarFeature;
+    )) as VehicleType;
   }
 
-  async deleteCar(carId: string, roles: string[]): Promise<Car> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.CAR,
-      [PermissionScope.DELETE, PermissionScope.ALL]
-    );
-
-    const _car = await car.findByIdAndDelete(carId).lean<Car>().exec();
-    if (!_car) throw createError("Car not found", 404);
-    return _car;
-  }
-
-  async deleteCarColor(carColorId: string, roles: string[]): Promise<CarColor> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.CAR,
-      [PermissionScope.DELETE, PermissionScope.ALL]
-    );
-
-    const _carColor = await carColor
-      .findByIdAndDelete(carColorId)
-      .lean<CarColor>()
-      .exec();
-    if (!_carColor) throw createError("Car color not found", 404);
-    return _carColor;
-  }
-
-  async deleteCarFeature(
-    carFeatureId: string,
+  async updateVehicleFeature(
+    slug: string,
+    input: Partial<CreateVehicleFeatureDto>,
     roles: string[]
-  ): Promise<CarFeature> {
+  ): Promise<VehicleFeature> {
+    return (await VehicleService.createOrUpdateVehicleProperty(
+      "vehicleFeature",
+      slug,
+      { ...input, slug: input?.name ? createSlug(input?.name) : slug },
+      roles
+    )) as VehicleFeature;
+  }
+
+  async deleteVehicle(vehicleId: string, roles: string[]): Promise<Vehicle> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.DELETE, PermissionScope.ALL]
     );
 
-    const _carFeature = await carFeature
-      .findByIdAndDelete(carFeatureId)
-      .lean<CarFeature>()
+    const _vehicle = await vehicle
+      .findByIdAndDelete(vehicleId)
+      .lean<Vehicle>()
       .exec();
-    if (!_carFeature) throw createError("Car feature not found", 404);
-    return _carFeature;
+    if (!_vehicle) throw createError("Vehicle not found", 404);
+    return _vehicle;
+  }
+
+  async deleteVehicleType(
+    vehicleTypeId: string,
+    roles: string[]
+  ): Promise<VehicleType> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
+
+    const _vehicleType = await vehicleType
+      .findByIdAndDelete(vehicleTypeId)
+      .lean<VehicleType>()
+      .exec();
+    if (!_vehicleType) throw createError("Vehicle type not found", 404);
+    return _vehicleType;
+  }
+
+  async deleteVehicleColor(
+    vehicleColorId: string,
+    roles: string[]
+  ): Promise<VehicleColor> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
+
+    const _vehicleColor = await vehicleColor
+      .findByIdAndDelete(vehicleColorId)
+      .lean<VehicleColor>()
+      .exec();
+    if (!_vehicleColor) throw createError("Vehicle color not found", 404);
+    return _vehicleColor;
+  }
+
+  async deleteVehicleFeature(
+    vehicleFeatureId: string,
+    roles: string[]
+  ): Promise<VehicleFeature> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
+
+    const _vehicleFeature = await vehicleFeature
+      .findByIdAndDelete(vehicleFeatureId)
+      .lean<VehicleFeature>()
+      .exec();
+    if (!_vehicleFeature) throw createError("Vehicle feature not found", 404);
+    return _vehicleFeature;
   }
 
   // performance can be improved later.
-  protected static treatIncomingCarImages(
-    dbImages: CarImage[],
+  protected static treatIncomingVehicleImages(
+    dbImages: VehicleImage[],
     newImages: string[]
-  ): CarImage[] {
-    // If a car image in the db is already set to cover, and there's an incoming image
+  ): VehicleImage[] {
+    // If a vehicle image in the db is already set to cover, and there's an incoming image
     // that needs to be set to cover, remove the already existing cover image, and add it
     // back as part of the incoming images, then the transformImageString method will handle the rest.
 
@@ -379,10 +454,10 @@ export default class CarService {
 
     const oldCoverImage = dbImages.find((v) => v?.metadata?.isCover === true);
     if (newCoverImage && !!oldCoverImage) {
-      const oldImages = (dbImages as CarImage[]).filter(
+      const oldImages = (dbImages as VehicleImage[]).filter(
         (v) => v?._id !== oldCoverImage?._id
       );
-      const neew = CarService.transformImageStrings([
+      const neew = VehicleService.transformImageStrings([
         ...newImages,
         oldCoverImage.url,
       ]);
@@ -391,29 +466,29 @@ export default class CarService {
 
     return [
       ...dbImages,
-      ...CarService.transformImageStrings(newImages as string[]),
+      ...VehicleService.transformImageStrings(newImages as string[]),
     ];
   }
 
-  protected static async removeCarImages(
-    carId: string,
+  protected static async removeVehicleImages(
+    vehicleId: string,
     imageIds: string[],
     dryRun = true
   ) {
-    const result = await car
+    const result = await vehicle
       .findByIdAndUpdate(
-        carId,
+        vehicleId,
         { $pull: { images: { _id: { $in: imageIds } } } },
         { new: true }
       )
-      .lean<Car>()
+      .lean<Vehicle>()
       .exec();
     if (!result && !dryRun)
-      throw createError("Failed to remove car images", 400);
+      throw createError("Failed to remove vehicle images", 400);
     return result;
   }
 
-  protected static transformImageStrings(images: string[]): CarImage[] {
+  protected static transformImageStrings(images: string[]): VehicleImage[] {
     // console.log(images);
     return images.filter(Boolean).map((image) => {
       const [img, query] = image.split("?");
@@ -423,23 +498,23 @@ export default class CarService {
           metadata: {
             isCover: true,
           },
-        } as CarImage;
+        } as VehicleImage;
       }
 
-      return { url: image } as CarImage;
+      return { url: image } as VehicleImage;
     });
   }
 
-  protected static async createOrUpdateCarProperty<T>(
-    entity: "carColor" | "carFeature",
+  protected static async createOrUpdateVehicleProperty<T>(
+    entity: "vehicleColor" | "vehicleFeature" | "vehicleType",
     slug: string,
     input: T,
     roles: string[]
-  ): Promise<CarColor | CarFeature> {
+  ): Promise<VehicleColor | VehicleFeature> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN],
       roles,
-      AvailableResource.CAR,
+      AvailableResource.VEHICLE,
       [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
@@ -453,6 +528,11 @@ export default class CarService {
         400
       );
     return _property;
+  }
+
+  static async checkVehicleExists(id: string): Promise<boolean> {
+    const count = await vehicle.countDocuments({ _id: id }).exec();
+    return count > 0;
   }
 }
 
