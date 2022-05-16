@@ -10,7 +10,11 @@ import {
   PaymentItem,
   paymentItem,
 } from "../entities";
-import { PermissionScope, TransactionReason } from "../valueObjects";
+import {
+  PaystackChargeStatus,
+  PermissionScope,
+  TransactionReason,
+} from "../valueObjects";
 import {
   createError,
   getUpdateOptions,
@@ -249,8 +253,7 @@ export default class OnboardingService {
       callbackUrl: string;
       inline: boolean;
     },
-    roles: string[],
-    force = false
+    roles: string[]
   ): Promise<IPaystackInitTransactionResponse | Onboarding["payment"]> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER],
@@ -281,27 +284,22 @@ export default class OnboardingService {
         404
       );
 
-    return await OnboardingService.initiateApplicationPayment(
-      application,
-      input,
-      roles,
-      payItem?._id!,
-      accountId,
-      force
-    );
-  }
+    const initiatePayment = async () =>
+      await OnboardingService.initiateApplicationPayment(
+        input,
+        roles,
+        payItem?._id!,
+        accountId
+      );
 
-  protected static async initiateApplicationPayment(
-    application: Onboarding,
-    input: any,
-    roles: string[],
-    itemId: string,
-    accountId: string,
-    force = false
-  ) {
-    if (!force && application?.payment) {
-      if (!application.payment?.paid && !application.payment?.txRef)
-        await new PaymentService().checkStatus(application.payment?.paymentRef);
+    if (application?.payment) {
+      if (!application.payment?.paid && !application.payment?.txRef) {
+        const paymentStatus = await new PaymentService().checkStatus(
+          application.payment?.paymentRef
+        );
+        if (paymentStatus.data.status !== PaystackChargeStatus.SUCCESS)
+          return await initiatePayment();
+      }
 
       return (
         await onboarding
@@ -310,6 +308,28 @@ export default class OnboardingService {
           .exec()
       ).payment;
     }
+
+    return await initiatePayment();
+  }
+
+  protected static async initiateApplicationPayment(
+    // application: Onboarding,
+    input: any,
+    roles: string[],
+    itemId: string,
+    accountId: string
+  ) {
+    // if (application?.payment) {
+    //   if (!application.payment?.paid && !application.payment?.txRef)
+    //     await new PaymentService().checkStatus(application.payment?.paymentRef);
+
+    //   return (
+    //     await onboarding
+    //       .findOne({ account: accountId })
+    //       .lean<Onboarding>()
+    //       .exec()
+    //   ).payment;
+    // }
 
     const tx = await new PaymentService().initTransaction(accountId, roles, {
       amount: 0,

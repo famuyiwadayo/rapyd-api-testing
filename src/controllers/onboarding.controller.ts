@@ -99,12 +99,7 @@ export default class OnboardingController {
   async makePayment(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.makePayment(
-        sub,
-        req.body,
-        roles,
-        (req.query?.force as any) ?? false
-      );
+      const data = await service.makePayment(sub, req.body, roles);
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);
