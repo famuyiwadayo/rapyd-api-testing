@@ -1,1 +1,1 @@
-export { default as Loan } from "./Loan";
+export { default as Loan, PaymentPeriod, PaymentPeriodType } from "./Loan";

@@ -21,3 +21,5 @@ export type {
   IStandardisedChargeResponse,
   IStandardizedInitTransactionResponse,
 } from "./paystack.ro";
+
+export type { GetPeriodicVehicleInstalmentRo } from "./finance.ro";

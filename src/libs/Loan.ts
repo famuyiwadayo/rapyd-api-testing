@@ -11,11 +11,10 @@
  * https://github.com/famuyiwadayo
  */
 
-function rnd(num: number) {
-  return Math.round(num * 100) / 100;
-}
+import { nanoid } from "nanoid";
+import { rnd } from "../utils";
 
-type PaymentPeriodType = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
+export type PaymentPeriodType = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
 interface IInstallment {
   capital: number;
@@ -23,6 +22,9 @@ interface IInstallment {
   installment: number;
   remain: number;
   interestSum: number;
+  instalmentId: string;
+  nextInstalmentId?: string;
+  prevInstalmentId?: string;
 }
 
 interface ICalcLoan {
@@ -33,7 +35,7 @@ interface ICalcLoan {
   sum: number;
 }
 
-enum PaymentPeriod {
+export enum PaymentPeriod {
   DAILY = 365,
   WEEKLY = 52,
   MONTHLY = 12,
@@ -90,6 +92,7 @@ export default class Loan {
       installment: installment,
       remain: amount - capitalSum - capital,
       interestSum: interestSum + interest,
+      instalmentId: nanoid(24),
     };
   }
 
@@ -140,6 +143,13 @@ export default class Loan {
         capitalSum += inst.remain;
         sum += inst.remain;
         inst.remain = 0;
+      }
+
+      const prevInst = this.installments[i - 1];
+
+      if (prevInst) {
+        this.installments[i - 1].nextInstalmentId = inst.instalmentId;
+        inst.prevInstalmentId = prevInst.instalmentId;
       }
 
       this.installments.push(inst);

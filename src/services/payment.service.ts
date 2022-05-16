@@ -19,6 +19,7 @@ import {
 } from "../entities";
 import RoleService from "./role.service";
 import OnboardingService from "./onboarding.service";
+import FinanceService from "./finance.service";
 
 export default class PaymentService {
   public async initTransaction(
@@ -204,11 +205,18 @@ export default class PaymentService {
               txRef._id as string
             ),
           ]);
-          //   await new UserSubscriptionService().assignSubscription(
-          //     transactionReference.userId,
-          //     transactionReference.itemId,
-          //     true
-          //   );
+          break;
+        case TransactionReason.AUTO_DEPOSIT:
+          await Promise.all([
+            await transactionReferenceService.markReferenceUsed(
+              data.reference,
+              true
+            ),
+            await FinanceService.markInitialDepositAsPaid(
+              txRef?.itemId,
+              txRef.account as string
+            ),
+          ]);
           break;
       }
     }

@@ -8,6 +8,7 @@ import {
 import { Gender } from "../valueObjects";
 import BaseEntity from "./base";
 import { Role } from "./role";
+import { Vehicle } from "./vehicle";
 export class AccountControl {
   @prop({ default: false })
   enabled: boolean;
@@ -24,6 +25,24 @@ export class AccountLoan {
 
   @prop()
   maxDuration: number;
+}
+
+export class VehicleDepositInfo {
+  @prop()
+  amount: number;
+
+  @prop({ default: false })
+  paid: boolean;
+}
+export class AccountVehicleInfo {
+  @prop({ ref: () => Vehicle })
+  vehicle: Ref<Vehicle>;
+
+  @prop()
+  duration: number;
+
+  @prop({ type: VehicleDepositInfo, _id: false })
+  deposit: VehicleDepositInfo;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -72,6 +91,9 @@ export class Account extends BaseEntity {
 
   @prop({ type: () => AccountLoan })
   loan: AccountLoan;
+
+  @prop({ type: () => AccountVehicleInfo, _id: false })
+  vehicleInfo: AccountVehicleInfo;
 }
 
 export default getModelForClass(Account);

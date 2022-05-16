@@ -1,5 +1,7 @@
 import { RoleService } from "../services";
 import {
+  Account,
+  account,
   ApplicationStatusEnum,
   AvailableResource,
   AvailableRole,
@@ -9,7 +11,12 @@ import {
   paymentItem,
 } from "../entities";
 import { PermissionScope, TransactionReason } from "../valueObjects";
-import { createError, getUpdateOptions, removeForcedInputs } from "../utils";
+import {
+  createError,
+  getUpdateOptions,
+  removeForcedInputs,
+  validateFields,
+} from "../utils";
 
 import {
   BiodataDto,
@@ -133,8 +140,14 @@ export default class OnboardingService {
   async selectVehicle(
     accountId: string,
     vehicleId: string,
+    input: {
+      initialDeposit: number;
+      duration: number;
+    },
     roles: string[]
   ): Promise<Onboarding> {
+    validateFields(input, ["duration", "initialDeposit"]);
+
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER],
       roles,
@@ -149,7 +162,7 @@ export default class OnboardingService {
       .findOneAndUpdate(
         { account: accountId },
         {
-          vehicleInfo: { vehicle: vehicleId },
+          vehicleInfo: { vehicle: vehicleId, ...input },
         },
         { new: true }
       )
@@ -236,7 +249,8 @@ export default class OnboardingService {
       callbackUrl: string;
       inline: boolean;
     },
-    roles: string[]
+    roles: string[],
+    force = false
   ): Promise<IPaystackInitTransactionResponse | Onboarding["payment"]> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER],
@@ -272,7 +286,8 @@ export default class OnboardingService {
       input,
       roles,
       payItem?._id!,
-      accountId
+      accountId,
+      force
     );
   }
 
@@ -281,9 +296,10 @@ export default class OnboardingService {
     input: any,
     roles: string[],
     itemId: string,
-    accountId: string
+    accountId: string,
+    force = false
   ) {
-    if (application?.payment) {
+    if (!force && application?.payment) {
       if (!application.payment?.paid && !application.payment?.txRef)
         await new PaymentService().checkStatus(application.payment?.paymentRef);
 
@@ -361,5 +377,46 @@ export default class OnboardingService {
         400
       );
     return data;
+  }
+
+  async approveApplication(id: string, roles: string[]): Promise<Onboarding> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.ALL]
+    );
+
+    const application = await onboarding
+      .findByIdAndUpdate(
+        id,
+        { status: ApplicationStatusEnum.VERIFIED },
+        { new: true }
+      )
+      .lean<Onboarding>()
+      .exec();
+
+    if (!application) throw createError("Application not found", 404);
+
+    await account
+      .findByIdAndUpdate(
+        application?.account,
+        {
+          isApproved: true,
+          vehicleInfo: {
+            vehicle: application?.vehicleInfo.vehicle,
+            duration: application?.vehicleInfo?.duration,
+            deposit: {
+              amount: application?.vehicleInfo?.initialDeposit,
+              paid: false,
+            },
+          },
+        },
+        { new: true }
+      )
+      .lean<Account>()
+      .exec();
+
+    return application;
   }
 }

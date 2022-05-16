@@ -313,10 +313,10 @@ export default class VehicleService {
     }
 
     if (input?.features && !isEmpty(input?.features))
-      input.features = [
+      input.features = uniq([
         ...(_vehicle?.features as string[]),
         ...input?.features,
-      ];
+      ]);
 
     _vehicle = await vehicle
       .findByIdAndUpdate(vehicleId, { ...input }, { new: true })

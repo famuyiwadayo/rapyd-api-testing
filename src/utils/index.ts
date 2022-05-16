@@ -16,3 +16,5 @@ export { default as paginate } from "./paginate";
 export { default as removeForcedInputs } from "./removeForcedInputs";
 
 export { default as stripUpdateFields } from "./stripUpdateFields";
+
+export { default as rnd } from "./rnd";

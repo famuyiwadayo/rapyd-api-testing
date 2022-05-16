@@ -8,6 +8,7 @@ import PaymentRouter from "./payment.routes";
 import VehicleRouter from "./vehicle.routes";
 import ComplaintRouter from "./complaint.routes";
 import OnboardingRouter from "./onboarding.routes";
+import FinanceRouter from "./finance.routes";
 // import EmailRouter from "./email.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
@@ -24,6 +25,8 @@ routes.use("/vehicles", VehicleRouter);
 routes.use("/payments", PaymentRouter);
 routes.use("/onboarding", OnboardingRouter);
 routes.use("/complaints", ComplaintRouter);
+routes.use("/complaints", ComplaintRouter);
+routes.use("/finances", FinanceRouter);
 
 // routes.use("/registrations", RegistrationRequestRouter);
 

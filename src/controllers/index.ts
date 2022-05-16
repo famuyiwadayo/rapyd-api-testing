@@ -6,6 +6,7 @@ export { default as PaymentController } from "./payment.controller";
 export { default as AccountController } from "./account.controller";
 export { default as ComplaintController } from "./complaint.controller";
 export { default as OnboardingController } from "./onboarding.controller";
+export { default as FinanceController } from "./finance.controller";
 // export { default as VoteController } from "./vote.controller";
 // export { default as CoinController } from "./coin.controller";
 // export { default as EarningController } from "./earning.controller";

@@ -73,6 +73,7 @@ export default class OnboardingController {
       const data = await service.selectVehicle(
         sub,
         req.params.vehicleId,
+        req.body,
         roles
       );
       sendResponse(res, 201, data);
@@ -98,8 +99,23 @@ export default class OnboardingController {
   async makePayment(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.makePayment(sub, req.body, roles);
+      const data = await service.makePayment(
+        sub,
+        req.body,
+        roles,
+        (req.query?.force as any) ?? false
+      );
       sendResponse(res, 201, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async approveApplication(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles } = req.user;
+      const data = await service.approveApplication(req.params.id, roles);
+      sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
     }

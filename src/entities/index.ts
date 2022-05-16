@@ -51,3 +51,14 @@ export {
 } from "./transactionReference";
 
 export { default as paymentItem, PaymentItem } from "./paymentItem";
+export { default as finance, Finance, FinanceCategory } from "./finance";
+export {
+  default as loanSpread,
+  LoanSpread,
+  LoanPaymentStatus,
+} from "./loanSpread";
+export {
+  default as loanRequest,
+  LoanRequest,
+  LoanApplicationStatus,
+} from "./loanRequest";

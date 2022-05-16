@@ -73,7 +73,7 @@ app.use(catchRequest);
 app.use(handleError);
 
 // const loan = new Loan();
-// console.log("LOAN", loan.calc(10115, 156, 3.24, 506, "WEEKLY"));
+// console.log("LOAN", loan.calc(10115, 2, 3.24, 506, "WEEKLY"));
 // console.log(
 //   "WEEKLY PAYMENT",
 //   loan.getPeriodicPayment(10115, 156, 3.24, 506, "WEEKLY")

@@ -4,6 +4,7 @@ export { default as RoleService } from "./role.service";
 export { default as EmailService } from "./email.service";
 export { default as SystemService } from "./system.service";
 export { default as AccessService } from "./access.service";
+export { default as FinanceService } from "./finance.service";
 export { default as PaymentService } from "./payment.service";
 export { default as AccountService } from "./account.service";
 export { default as PasswordService } from "./password.service";

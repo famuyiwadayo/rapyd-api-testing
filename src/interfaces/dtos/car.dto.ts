@@ -8,6 +8,7 @@ export interface CreateVehicleDto {
   price: number;
   seats: string;
   instalmentPrice: number;
+  annualPercentageRate: number;
   gearBox: GearBox;
   fuelType: FuelType;
   color: string;

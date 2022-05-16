@@ -57,6 +57,9 @@ export class Vehicle extends BaseEntity {
   @prop()
   instalmentPrice: number;
 
+  @prop()
+  annualPercentageRate: number;
+
   @prop({ enum: GearBox })
   gearBox: GearBox;
 

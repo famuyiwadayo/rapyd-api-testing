@@ -14,7 +14,7 @@ export default function <T>(input: T, requiredFields: (keyof T)[]) {
   // console.log("required", fieldsRequired);
   if (missingFields.length > 0)
     throw createError(
-      `${missingFields.join(", ")} ${
+      `${missingFields.join(", ")} fields ${
         missingFields.length === 1 ? "is" : "are"
       } required`,
       400

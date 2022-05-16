@@ -204,6 +204,12 @@ export class VehicleInfo extends BaseEntity {
   @prop({ ref: () => Vehicle })
   vehicle: Ref<Vehicle>;
 
+  @prop()
+  initialDeposit: number;
+
+  @prop()
+  duration: number; // in months
+
   @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
   status: ApplicationStatusEnum;
 }
