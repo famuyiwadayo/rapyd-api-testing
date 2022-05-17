@@ -11,7 +11,7 @@ router.post(
   controller.makeInitialVehicleDeposit
 );
 
-router.get(
+router.post(
   "/vehicles/:vehicleId/instalment",
   authGuard,
   controller.getPeriodicVehicleInstalment
