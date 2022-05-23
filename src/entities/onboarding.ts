@@ -164,6 +164,9 @@ export class Guarantor extends BaseEntity {
   @prop()
   email: string;
 
+  @prop()
+  document: string;
+
   @prop({ type: () => Phone, _id: false })
   phone: Phone;
 }

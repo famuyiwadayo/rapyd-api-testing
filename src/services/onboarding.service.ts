@@ -319,18 +319,6 @@ export default class OnboardingService {
     itemId: string,
     accountId: string
   ) {
-    // if (application?.payment) {
-    //   if (!application.payment?.paid && !application.payment?.txRef)
-    //     await new PaymentService().checkStatus(application.payment?.paymentRef);
-
-    //   return (
-    //     await onboarding
-    //       .findOne({ account: accountId })
-    //       .lean<Onboarding>()
-    //       .exec()
-    //   ).payment;
-    // }
-
     const tx = await new PaymentService().initTransaction(accountId, roles, {
       amount: 0,
       itemId,
