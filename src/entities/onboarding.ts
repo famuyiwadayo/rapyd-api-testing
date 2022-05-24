@@ -104,6 +104,12 @@ export class SecurityQuestions {
 
   @prop()
   dateIssued: Date;
+
+  @prop()
+  nin: string;
+
+  @prop()
+  ninIssuanceDate: string;
 }
 
 export class Background {

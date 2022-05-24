@@ -14,7 +14,9 @@ router.post("/payment", authGuard, controller.makePayment);
 router.post("/guarantors", authGuard, controller.addGuarantors);
 router.post("/approve/:id", authGuard, controller.approveApplication);
 
-router.get("/", authGuard, controller.getDriverOnboardingInfo);
+router.get("/", authGuard, controller.getAllApplications);
+router.get("/me", authGuard, controller.getCurrentDriverOnboardingInfo);
 router.get("/status", authGuard, controller.getApplicationStatus);
+router.get("/:id", authGuard, controller.getApplicationById);
 
 export default router;

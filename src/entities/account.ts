@@ -9,6 +9,15 @@ import { Gender } from "../valueObjects";
 import BaseEntity from "./base";
 import { Role } from "./role";
 import { Vehicle } from "./vehicle";
+
+export enum VehicleStatus {
+  ACCIDENTED = "accidented",
+  IN_MECHANIC = "in_mechanic",
+  REPOSSESSED = "repossessed",
+  AWAITING_INSURANCE = "awaiting_insurance",
+  AWAITING_REGISTRATION = "awaiting_registration",
+  ACTIVE = "active",
+}
 export class AccountControl {
   @prop({ default: false })
   enabled: boolean;
@@ -43,6 +52,9 @@ export class AccountVehicleInfo {
 
   @prop({ type: VehicleDepositInfo, _id: false })
   deposit: VehicleDepositInfo;
+
+  @prop({ enum: VehicleStatus, default: VehicleStatus.AWAITING_REGISTRATION })
+  vehicleStatus: VehicleStatus;
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })

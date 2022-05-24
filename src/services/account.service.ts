@@ -45,29 +45,38 @@ export default class AccountService {
 
   async getAccounts(
     roles: string[],
-    filters: IPaginationFilter & { role?: AvailableRole } = {
+    filters: IPaginationFilter & {
+      role?: AvailableRole;
+      vehicleId?: string;
+    } = {
       limit: "10",
       page: "1",
     }
   ): Promise<PaginatedDocument<Account[]>> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
       roles,
       AvailableResource.ACCOUNT,
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    let queries: any = {};
+    let queries: { $and?: any[] } = {};
 
     // this is probably gonna make operations a tardy bit slower.
     // aggregation could be used here to make it faster.
     if (filters?.role) {
+      queries?.$and = [];
       const roleFilter = String(filters.role).split(",");
       const _roles = await RoleService.getRoleBySlugs(roleFilter);
 
-      queries?.$or = [];
-      queries.$or.push({ roles: { $in: _roles?.map((r) => r?._id) } });
+      queries.$and.push({ roles: { $in: _roles?.map((r) => r?._id) } });
     }
+    if (filters?.vehicleId) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries.$and.push({ "vehicleInfo.vehicle": filters.vehicleId });
+    }
+
+    // console.log(JSON.stringify(queries));
     return await paginate("account", queries, filters);
   }
 

@@ -3,6 +3,7 @@ import { createError } from "../utils";
 import {
   account,
   vehicle,
+  onboarding,
   vehicleColor,
   vehicleFeature,
   vehicleType,
@@ -20,6 +21,7 @@ export type SchemaTypes =
   | "vehicleType"
   | "account"
   | "complaint"
+  | "onboarding"
   | "complaintFeedback";
 
 export default class AccessService {
@@ -50,6 +52,7 @@ export default class AccessService {
     const map: { [key in SchemaTypes]: DocumentType<any> } = {
       vehicle,
       account,
+      onboarding,
       vehicleColor,
       vehicleFeature,
       complaint,

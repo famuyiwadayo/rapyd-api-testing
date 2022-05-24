@@ -18,6 +18,7 @@ import {
 import {
   createError,
   getUpdateOptions,
+  paginate,
   removeForcedInputs,
   validateFields,
 } from "../utils";
@@ -34,7 +35,11 @@ import {
   UpdateApplicationStatusDto,
 } from "../interfaces/dtos/onboarding.dto";
 import AuthVerificationService from "./authVerification.service";
-import { IPaystackInitTransactionResponse } from "../interfaces/ros";
+import {
+  IPaginationFilter,
+  IPaystackInitTransactionResponse,
+  PaginatedDocument,
+} from "../interfaces/ros";
 import PaymentService from "./payment.service";
 import config from "../config";
 import VehicleService from "./vehicle.service";
@@ -42,7 +47,7 @@ import VehicleService from "./vehicle.service";
 type CreateOnboardingDataKeys = keyof Onboarding;
 
 export default class OnboardingService {
-  async getDriverOnboardingInfo(
+  async getCurrentDriverOnboardingInfo(
     accountId: string,
     roles: string[],
     dryRun = false
@@ -63,6 +68,48 @@ export default class OnboardingService {
     if (dryRun && !data) return {};
 
     return data;
+  }
+
+  async getApplicationById(id: string, roles: string[]): Promise<Onboarding> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const data = await onboarding.findById(id).lean<Onboarding>().exec();
+
+    if (!data) throw createError("Application not found", 404);
+    return data;
+  }
+
+  async getAllApplications(
+    roles: string[],
+    filters: IPaginationFilter & {
+      vehicleId?: string;
+    } = {
+      limit: "10",
+      page: "1",
+    }
+  ): Promise<PaginatedDocument<Onboarding[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    let queries: { $and?: any[] } = {};
+
+    if (filters?.vehicleId) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries?.$and!.push({ "vehicleInfo.vehicle": filters.vehicleId });
+    }
+
+    console.log(JSON.stringify(queries));
+
+    return await paginate("onboarding", queries, filters);
   }
 
   async getApplicationStatus(

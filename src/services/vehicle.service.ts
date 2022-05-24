@@ -129,7 +129,7 @@ export default class VehicleService {
     // console.log(JSON.stringify({ filters }));
 
     return await paginate("vehicle", queries, filters, {
-      populate: ["features", "color"],
+      populate: ["features", "color", "type"],
     });
   }
 

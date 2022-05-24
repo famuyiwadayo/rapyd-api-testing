@@ -5,14 +5,34 @@ import { sendError, sendResponse } from "../utils";
 const service = new OnboardingService();
 
 export default class OnboardingController {
-  async getDriverOnboardingInfo(
+  async getAllApplications(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles } = req.user;
+      const data = await service.getAllApplications(roles, req.query);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getApplicationById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles } = req.user;
+      const data = await service.getApplicationById(req.params.id, roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getCurrentDriverOnboardingInfo(
     req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.getDriverOnboardingInfo(
+      const data = await service.getCurrentDriverOnboardingInfo(
         sub,
         roles,
         req.query.dryRun as any
