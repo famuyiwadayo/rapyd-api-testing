@@ -62,3 +62,5 @@ export {
   LoanRequest,
   LoanApplicationStatus,
 } from "./loanRequest";
+
+export { default as servicing, Servicing } from "./servicing";

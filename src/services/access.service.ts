@@ -8,6 +8,7 @@ import {
   vehicleFeature,
   vehicleType,
   complaint,
+  servicing,
   complaintFeedback,
 } from "../entities";
 
@@ -22,7 +23,8 @@ export type SchemaTypes =
   | "account"
   | "complaint"
   | "onboarding"
-  | "complaintFeedback";
+  | "complaintFeedback"
+  | "servicing";
 
 export default class AccessService {
   static async documentBelongsToAccount(
@@ -51,6 +53,7 @@ export default class AccessService {
   ): ReturnModelType<DocumentType<any>, any> {
     const map: { [key in SchemaTypes]: DocumentType<any> } = {
       vehicle,
+      servicing,
       account,
       onboarding,
       vehicleColor,

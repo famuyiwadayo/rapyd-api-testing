@@ -110,4 +110,4 @@ export class Account extends BaseEntity {
 
 export default getModelForClass(Account);
 
-// isApproved, rapydId, password, control, roles, isEmailVerified, refCode, email
+// isApproved, rapydId, password, control, roles, isEmailVerified, refCode, email.

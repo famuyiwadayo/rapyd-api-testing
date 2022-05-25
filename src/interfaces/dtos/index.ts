@@ -34,3 +34,5 @@ export type {
 export type { AddPaymentItemDto } from "./payment.dto";
 
 export type { GetPeriodicVehicleInstalmentDto } from "./finance.dto";
+
+export type { CreateServicingDto } from "./servicing.dto";
