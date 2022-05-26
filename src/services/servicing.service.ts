@@ -49,7 +49,37 @@ export default class ServicingService {
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    return await paginate("servicing", {}, filters);
+    return await paginate("servicing", {}, filters, { populate: ["driver"] });
+  }
+
+  // async getServicingById(
+  //   id: string,
+  //   roles: string[]
+  // ): Promise<PaginatedDocument<Servicing[]>> {
+  //   await RoleService.requiresPermission(
+  //     [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+  //     roles,
+  //     AvailableResource.SERVICING,
+  //     [PermissionScope.READ, PermissionScope.ALL]
+  //   );
+
+  // }
+
+  async getAllCurrentUserServicing(
+    accountId: string,
+    roles: string[],
+    filters: IPaginationFilter = { limit: "10", page: "1" }
+  ): Promise<PaginatedDocument<Servicing[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.DRIVER],
+      roles,
+      AvailableResource.SERVICING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    return await paginate("servicing", { driver: accountId }, filters, {
+      populate: ["driver"],
+    });
   }
 
   async updateServicingComment(
@@ -73,11 +103,11 @@ export default class ServicingService {
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    const _ser = await servicing.findByIdAndUpdate(
-      serviceId,
-      { comment: input.comment },
-      { new: true }
-    );
+    const _ser = await servicing
+      .findByIdAndUpdate(serviceId, { comment: input.comment }, { new: true })
+      .lean<Servicing>()
+      .exec();
+
     if (!_ser) throw createError("Service not found", 404);
     return _ser;
   }
@@ -93,7 +123,12 @@ export default class ServicingService {
       [PermissionScope.DELETE, PermissionScope.ALL]
     );
 
-    const _ser = await servicing.findByIdAndDelete(serviceId, { new: true });
+    console.log("Service ID", serviceId);
+
+    const _ser = await servicing
+      .findByIdAndDelete(serviceId, { new: true })
+      .lean<Servicing>()
+      .exec();
     if (!_ser) throw createError("Service not found", 404);
     return _ser;
   }

@@ -50,6 +50,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.PAYMENT_ITEM,
         scopes: [PermissionScope.READ],
       },
+      {
+        name: AvailableResource.SERVICING,
+        scopes: [PermissionScope.READ],
+      },
     ],
   },
   moderator: {
@@ -91,6 +95,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.PAYMENT_ITEM,
         scopes: [PermissionScope.READ],
       },
+      {
+        name: AvailableResource.SERVICING,
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE],
+      },
     ],
   },
   superadmin: {
@@ -121,6 +129,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.PAYMENT_ITEM,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.SERVICING,
         scopes: [PermissionScope.ALL],
       },
     ],

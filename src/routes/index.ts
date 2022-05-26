@@ -9,6 +9,7 @@ import VehicleRouter from "./vehicle.routes";
 import ComplaintRouter from "./complaint.routes";
 import OnboardingRouter from "./onboarding.routes";
 import FinanceRouter from "./finance.routes";
+import ServicingRouter from "./servicing.routes";
 // import EmailRouter from "./email.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
@@ -27,6 +28,7 @@ routes.use("/onboarding", OnboardingRouter);
 routes.use("/complaints", ComplaintRouter);
 routes.use("/complaints", ComplaintRouter);
 routes.use("/finances", FinanceRouter);
+routes.use("/services", ServicingRouter);
 
 // routes.use("/registrations", RegistrationRequestRouter);
 
