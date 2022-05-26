@@ -78,7 +78,11 @@ export default class OnboardingService {
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const data = await onboarding.findById(id).lean<Onboarding>().exec();
+    const data = await onboarding
+      .findById(id)
+      .populate("account")
+      .lean<Onboarding>()
+      .exec();
 
     if (!data) throw createError("Application not found", 404);
     return data;
@@ -109,7 +113,9 @@ export default class OnboardingService {
 
     console.log(JSON.stringify(queries));
 
-    return await paginate("onboarding", queries, filters);
+    return await paginate("onboarding", queries, filters, {
+      populate: ["account"],
+    });
   }
 
   async getApplicationStatus(

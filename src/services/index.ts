@@ -12,3 +12,4 @@ export { default as ComplaintService } from "./complaint.service";
 export { default as OnboardingService } from "./onboarding.service";
 export { default as AuthVerificationService } from "./authVerification.service";
 export { default as TransactionReferenceService } from "./transactionReference.service";
+export { default as ServicingService } from "./servicing.service";
