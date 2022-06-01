@@ -43,6 +43,44 @@ export default class AccountService {
     return acc;
   }
 
+  async addBank(
+    sub: string,
+    input: AddBankDto,
+    roles: string[]
+  ): Promise<Account> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
+    if (!(await AccountService.checkAccountExists(sub)))
+      throw createError("Account not found", 401);
+
+    return await account
+      .findByIdAndUpdate(sub, { bankDetails: { ...input } }, { new: true })
+      .lean<Account>()
+      .exec();
+  }
+
+  async deleteBankInfo(sub: string, roles: string[]): Promise<Account> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
+    if (!(await AccountService.checkAccountExists(sub)))
+      throw createError("Account not found", 401);
+
+    return await account
+      .findByIdAndUpdate(sub, { bankDetails: null }, { new: true })
+      .lean<Account>()
+      .exec();
+  }
+
   async getAccounts(
     roles: string[],
     filters: IPaginationFilter & {

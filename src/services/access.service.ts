@@ -1,6 +1,7 @@
 import { ReturnModelType, DocumentType } from "@typegoose/typegoose";
 import { createError } from "../utils";
 import {
+  loan,
   account,
   vehicle,
   onboarding,
@@ -16,6 +17,7 @@ import capitalize from "lodash/capitalize";
 import consola from "consola";
 
 export type SchemaTypes =
+  | "loan"
   | "vehicle"
   | "vehicleColor"
   | "vehicleFeature"
@@ -52,6 +54,7 @@ export default class AccessService {
     schema: SchemaTypes
   ): ReturnModelType<DocumentType<any>, any> {
     const map: { [key in SchemaTypes]: DocumentType<any> } = {
+      loan,
       vehicle,
       servicing,
       account,

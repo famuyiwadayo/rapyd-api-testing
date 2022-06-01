@@ -24,6 +24,7 @@ export enum AvailableResource {
   PAYMENT_ITEM = "payment_item",
   SERVICING = "servicing",
   GUARANTOR = "guarantor",
+  LOAN = "loan",
 }
 
 class Scope {

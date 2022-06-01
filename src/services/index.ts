@@ -13,3 +13,5 @@ export { default as OnboardingService } from "./onboarding.service";
 export { default as AuthVerificationService } from "./authVerification.service";
 export { default as TransactionReferenceService } from "./transactionReference.service";
 export { default as ServicingService } from "./servicing.service";
+
+export { default as LoanService } from "./loan.service";

@@ -7,10 +7,9 @@ enum PermissionScope {
   DISABLE = "disable",
   ENABLE = "enable",
   VERIFY = "verify",
-  EARN = "earn",
   WITHDRAW = "withdraw",
-  REDEEM = "redeem",
-  VOTE = "vote",
+  REQUEST = "request",
+  APPROVE = "approve",
   ALL = "*",
 }
 
