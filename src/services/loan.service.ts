@@ -120,8 +120,8 @@ export default class LoanService {
       [PermissionScope.REQUEST, PermissionScope.ALL]
     );
 
-    if (await LoanService.checkHasARequest(sub))
-      throw createError("You already have a pending/active request", 400);
+    if (await LoanService.checkHasALoan(sub))
+      throw createError("You already have a pending/active loan", 400);
 
     const paybackDate = addDays(new Date(), parseInt(input.duration as string));
     return await loan.create({
@@ -141,7 +141,7 @@ export default class LoanService {
     return await LoanService.updateLoanStatus(id, roles, LoanStatus.DECLINED);
   }
 
-  static async checkHasARequest(sub: string): Promise<boolean> {
+  static async checkHasALoan(sub: string): Promise<boolean> {
     const count = await loan
       .countDocuments({
         account: sub,
@@ -169,7 +169,15 @@ export default class LoanService {
     );
 
     const l = await loan
-      .findByIdAndUpdate(loanId, { status }, { new: true })
+      .findOneAndUpdate(
+        {
+          _id: loanId,
+          // don't allow admin to update an approved or paid loan
+          status: { $in: [LoanStatus.PENDING, LoanStatus.DECLINED] },
+        },
+        { status },
+        { new: true }
+      )
       .lean<Loan>()
       .exec();
     if (!l) throw createError("Loan not found", 404);
@@ -181,6 +189,11 @@ export default class LoanService {
     const l = await loan.findById(loanId).lean<Loan>().exec();
 
     if (!l) throw createError("Loan not found", 404);
+
+    if (l.status === LoanStatus.PENDING)
+      throw createError("Loan as not been approved", 401);
+    if (l.status === LoanStatus.DECLINED)
+      throw createError("Loan as been rejected", 401);
 
     if (l.balance === 0) {
       if (l.status !== LoanStatus.PAID)
@@ -221,8 +234,10 @@ export default class LoanService {
     if (l.balance - amount === 0)
       Object.assign(updates, { status: LoanStatus.PAID });
 
+    console.log(updates);
+
     return await loan
-      .findById(l._id, updates, { new: true })
+      .findByIdAndUpdate(l._id, updates, { new: true })
       .lean<Loan>()
       .exec();
   }
