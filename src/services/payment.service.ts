@@ -20,6 +20,7 @@ import {
 import RoleService from "./role.service";
 import OnboardingService from "./onboarding.service";
 import FinanceService from "./finance.service";
+import LoanService from "./loan.service";
 
 export default class PaymentService {
   public async initTransaction(
@@ -44,6 +45,13 @@ export default class PaymentService {
         const item = await this.getPaymentItem(body.itemId, roles);
         itemId = item._id!;
         amount = item.amount;
+        break;
+      case TransactionReason.LOAN_PAYMENT:
+        if (!body.itemId) throw createError("itemId is required", 400);
+        await LoanService.checkLoanBeforePaymentUpdate(
+          body.itemId,
+          body.amount
+        );
         break;
     }
 
@@ -215,6 +223,20 @@ export default class PaymentService {
             await FinanceService.markInitialDepositAsPaid(
               txRef?.itemId,
               txRef.account as string
+            ),
+          ]);
+          break;
+        case TransactionReason.LOAN_PAYMENT:
+          await Promise.all([
+            await transactionReferenceService.markReferenceUsed(
+              data.reference,
+              true
+            ),
+            await LoanService.updatePayback(
+              txRef?.itemId,
+              txRef?.account as string,
+              txRef?.amount,
+              txRef?._id as string
             ),
           ]);
           break;

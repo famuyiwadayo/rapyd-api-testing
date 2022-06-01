@@ -1,4 +1,4 @@
-export { default as account, Account } from "./account";
+export { default as account, Account, AccountBankDetails } from "./account";
 export { default as role, Role, AvailableRole } from "./role";
 export { default as authToken, AuthToken } from "./authToken";
 export { default as BaseEntity } from "./base";
@@ -57,10 +57,6 @@ export {
   LoanSpread,
   LoanPaymentStatus,
 } from "./loanSpread";
-export {
-  default as loanRequest,
-  LoanRequest,
-  LoanApplicationStatus,
-} from "./loanRequest";
+export { default as loan, Loan, LoanStatus } from "./loan";
 
 export { default as servicing, Servicing } from "./servicing";

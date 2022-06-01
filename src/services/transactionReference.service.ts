@@ -11,10 +11,24 @@ export default class TransactionReferenceService {
     reason: TransactionReason,
     itemId?: string,
     saveCard = false,
-    reference?: string
+    reference?: string,
+    txNew = false
   ): Promise<TransactionReference> {
     reference =
       reference ?? TransactionReferenceService.generateReferenceNumber();
+
+    if (txNew)
+      return await transactionReference.create({
+        amount,
+        account: accountId,
+        itemId,
+        roles,
+        reason,
+        reference,
+        saveCard,
+        used: false,
+      });
+
     return await transactionReference
       .findOneAndUpdate(
         { account: accountId, reason, itemId },

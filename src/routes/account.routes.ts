@@ -14,6 +14,7 @@ router.get("/:id", authGuard, controller.accountById); // ✅
 
 // POST
 // router.post("/", authGuard, controller.createAccount); // ✅
+router.post("/bank", authGuard, controller.addBank); // ✅
 
 // PUT
 router.put("/me", authGuard, controller.updateAccount); // ✅
@@ -23,6 +24,7 @@ router.put("/:id/enable", authGuard, controller.enableAccount); // ✅
 router.put("/:id/primaryRole", authGuard, controller.updatePrimaryRole); // ✅
 
 // DELETE
+router.delete("/bank", authGuard, controller.deleteBankInfo); // ✅
 router.delete("/:id", authGuard, controller.deleteAccount); // ✅
 
 export default router;
