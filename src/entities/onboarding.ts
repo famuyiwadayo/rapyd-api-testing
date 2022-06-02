@@ -9,6 +9,7 @@ import { Account } from "./account";
 import BaseEntity from "./base";
 import { Vehicle } from "./vehicle";
 import { TransactionReference } from "./transactionReference";
+import { Guarantor } from "./guarantor";
 
 export enum ApplicationStatusEnum {
   VERIFIED = "verified",
@@ -162,20 +163,20 @@ export class DocumentUpload extends BaseEntity {
   status: ApplicationStatusEnum;
 }
 
-@modelOptions({ schemaOptions: { timestamps: true } })
-export class Guarantor extends BaseEntity {
-  @prop()
-  name: string;
+// @modelOptions({ schemaOptions: { timestamps: true } })
+// export class Guarantor extends BaseEntity {
+//   @prop()
+//   name: string;
 
-  @prop()
-  email: string;
+//   @prop()
+//   email: string;
 
-  @prop()
-  document: string;
+//   @prop()
+//   document: string;
 
-  @prop({ type: () => Phone, _id: false })
-  phone: Phone;
-}
+//   @prop({ type: () => Phone, _id: false })
+//   phone: Phone;
+// }
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class GuarantorInfo extends BaseEntity {
   @prop({ type: () => Guarantor })

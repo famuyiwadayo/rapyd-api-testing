@@ -22,7 +22,6 @@ export {
   PersonalInfo,
   NextOfKin,
   SecurityQuestions,
-  Guarantor,
   Phone,
   ApplicationStatus,
   ApplicationStatusEnum,
@@ -64,3 +63,4 @@ export {
 } from "./loanRequest";
 
 export { default as servicing, Servicing } from "./servicing";
+export { default as guarantor, Guarantor } from "./guarantor";

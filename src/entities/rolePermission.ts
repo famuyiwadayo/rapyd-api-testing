@@ -23,6 +23,7 @@ export enum AvailableResource {
   COMPLAINT_FEEDBACK = "complaint_feedback",
   PAYMENT_ITEM = "payment_item",
   SERVICING = "servicing",
+  GUARANTOR = "guarantor",
 }
 
 class Scope {
