@@ -43,6 +43,7 @@ import {
 import PaymentService from "./payment.service";
 import config from "../config";
 import VehicleService from "./vehicle.service";
+import GuarantorService from "./guarantor.service";
 
 type CreateOnboardingDataKeys = keyof Onboarding;
 
@@ -459,24 +460,32 @@ export default class OnboardingService {
 
     if (!application) throw createError("Application not found", 404);
 
-    await account
-      .findByIdAndUpdate(
-        application?.account,
-        {
-          isApproved: true,
-          vehicleInfo: {
-            vehicle: application?.vehicleInfo.vehicle,
-            duration: application?.vehicleInfo?.duration,
-            deposit: {
-              amount: application?.vehicleInfo?.initialDeposit,
-              paid: false,
+    await Promise.all([
+      account
+        .findByIdAndUpdate(
+          application?.account,
+          {
+            isApproved: true,
+            phone: application?.biodata?.personalInfo?.phone,
+            vehicleInfo: {
+              vehicle: application?.vehicleInfo.vehicle,
+              duration: application?.vehicleInfo?.duration,
+              deposit: {
+                amount: application?.vehicleInfo?.initialDeposit,
+                paid: false,
+              },
             },
-          },
-        },
-        { new: true }
-      )
-      .lean<Account>()
-      .exec();
+          } as Account,
+          { new: true }
+        )
+        .lean<Account>()
+        .exec(),
+
+      GuarantorService.addMultipleGuarantor(
+        application?.account as string,
+        application?.guarantorInfo?.guarantors
+      ),
+    ]);
 
     return application;
   }

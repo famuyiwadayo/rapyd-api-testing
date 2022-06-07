@@ -15,3 +15,4 @@ export { default as TransactionReferenceService } from "./transactionReference.s
 export { default as ServicingService } from "./servicing.service";
 
 export { default as LoanService } from "./loan.service";
+export { default as GuarantorService } from "./guarantor.service";

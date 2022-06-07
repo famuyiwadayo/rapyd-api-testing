@@ -2,6 +2,7 @@ import { ReturnModelType, DocumentType } from "@typegoose/typegoose";
 import { createError } from "../utils";
 import {
   loan,
+  guarantor,
   account,
   vehicle,
   onboarding,
@@ -19,6 +20,7 @@ import consola from "consola";
 export type SchemaTypes =
   | "loan"
   | "vehicle"
+  | "guarantor"
   | "vehicleColor"
   | "vehicleFeature"
   | "vehicleType"
@@ -63,6 +65,7 @@ export default class AccessService {
       vehicleFeature,
       complaint,
       vehicleType,
+      guarantor,
       complaintFeedback,
     };
 

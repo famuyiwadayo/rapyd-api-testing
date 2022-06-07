@@ -58,6 +58,15 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.LOAN,
         scopes: [PermissionScope.READ, PermissionScope.REQUEST],
       },
+      {
+        name: AvailableResource.GUARANTOR,
+        scopes: [
+          PermissionScope.READ,
+          PermissionScope.UPDATE,
+          PermissionScope.CREATE,
+          PermissionScope.DELETE,
+        ],
+      },
     ],
   },
   moderator: {
@@ -107,6 +116,15 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.LOAN,
         scopes: [PermissionScope.READ, PermissionScope.UPDATE],
       },
+      {
+        name: AvailableResource.GUARANTOR,
+        scopes: [
+          PermissionScope.READ,
+          PermissionScope.UPDATE,
+          PermissionScope.CREATE,
+          PermissionScope.DELETE,
+        ],
+      },
     ],
   },
   superadmin: {
@@ -145,6 +163,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.LOAN,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.GUARANTOR,
         scopes: [PermissionScope.ALL],
       },
     ],

@@ -6,7 +6,7 @@ import {
 } from "@typegoose/typegoose";
 import { Account } from "./account";
 import BaseEntity from "./base";
-import { Phone } from "./onboarding";
+// import { Phone } from "./onboarding";
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Guarantor extends BaseEntity {
@@ -22,8 +22,8 @@ export class Guarantor extends BaseEntity {
   @prop()
   document: string;
 
-  @prop({ type: () => Phone, _id: false })
-  phone: Phone;
+  // @prop({ type: () => Phone, _id: false })
+  // phone: Phone;
 }
 
 export default getModelForClass(Guarantor);
