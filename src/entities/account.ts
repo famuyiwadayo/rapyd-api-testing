@@ -7,6 +7,7 @@ import {
 } from "@typegoose/typegoose";
 import { Gender } from "../valueObjects";
 import BaseEntity from "./base";
+import { Phone } from "./onboarding";
 import { Role } from "./role";
 import { Vehicle } from "./vehicle";
 
@@ -94,8 +95,11 @@ export class Account extends BaseEntity {
   @prop()
   primaryRole?: string;
 
-  @prop()
-  phone?: string;
+  @prop({ allowMixed: "allow" })
+  phone?: {
+    home: string;
+    work: string;
+  };
 
   @prop({ ref: () => Role })
   roles?: Ref<Role>[];

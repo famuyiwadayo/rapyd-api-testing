@@ -306,7 +306,7 @@ export default class RoleService {
           "scopes.name": { $in: scopes },
         })
         .lean()
-        .exec()) && roles.includes(String(result[1]._id))
+        .exec()) && roles?.includes(String(result[1]._id))
     );
   }
 
@@ -335,7 +335,7 @@ export default class RoleService {
     scopes: PermissionScope[]
   ): Promise<void> {
     const toRunInParallel: any[] = [];
-    requiredRoleSlugs.forEach((requiredRole) =>
+    requiredRoleSlugs?.forEach((requiredRole) =>
       toRunInParallel.push(
         RoleService._requiresPermission(
           requiredRole,

@@ -11,6 +11,7 @@ import OnboardingRouter from "./onboarding.routes";
 import FinanceRouter from "./finance.routes";
 import ServicingRouter from "./servicing.routes";
 import LoanRouter from "./loan.routes";
+import GuarantorRouter from "./guarantor.routes";
 // import EmailRouter from "./email.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
@@ -31,6 +32,7 @@ routes.use("/complaints", ComplaintRouter);
 routes.use("/complaints", ComplaintRouter);
 routes.use("/finances", FinanceRouter);
 routes.use("/services", ServicingRouter);
+routes.use("/guarantors", GuarantorRouter);
 
 // routes.use("/registrations", RegistrationRequestRouter);
 

@@ -121,14 +121,16 @@ export default class AccountService {
   async updatePrimaryRole(
     id: string,
     role: string,
-    roles: string[]
+    roles: string[],
+    dryRun = true
   ): Promise<Account> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.ACCOUNT,
-      [PermissionScope.UPDATE, PermissionScope.ALL]
-    );
+    if (!dryRun)
+      await RoleService.requiresPermission(
+        [AvailableRole.SUPERADMIN],
+        roles,
+        AvailableResource.ACCOUNT,
+        [PermissionScope.UPDATE, PermissionScope.ALL]
+      );
 
     const res = await RoleService.getRoleById(role);
     const acc = (await account

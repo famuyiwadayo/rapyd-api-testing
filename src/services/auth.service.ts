@@ -57,13 +57,13 @@ export default class AuthService {
     data: registerDto,
     role: AvailableRole,
     deviceId: string
-  ): Promise<Auth> {
+  ): Promise<Auth | null> {
     if (await this.accountService.checkEmailExists(data.email))
       throw createError("Email already exist", 400);
 
     const _role = await RoleService.getRoleBySlug(role);
     const acc = await this.accountService.createAccount(data, [_role?._id]);
-    // if (data?.refCode) await ReferralService.createRef(data.refCode, acc?._id);
+    // // if (data?.refCode) await ReferralService.createRef(data.refCode, acc?._id);
 
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
