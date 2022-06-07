@@ -57,6 +57,17 @@ export class AccountVehicleInfo {
   vehicleStatus: VehicleStatus;
 }
 
+export class AccountBankDetails {
+  @prop()
+  bankName: string;
+
+  @prop()
+  accountName: string;
+
+  @prop()
+  accountNo: string;
+}
+
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Account extends BaseEntity {
   @prop()
@@ -106,6 +117,9 @@ export class Account extends BaseEntity {
 
   @prop({ type: () => AccountVehicleInfo, _id: false })
   vehicleInfo: AccountVehicleInfo;
+
+  @prop({ type: () => AccountBankDetails })
+  bankDetails: AccountBankDetails;
 }
 
 export default getModelForClass(Account);

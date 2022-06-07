@@ -10,6 +10,7 @@ import ComplaintRouter from "./complaint.routes";
 import OnboardingRouter from "./onboarding.routes";
 import FinanceRouter from "./finance.routes";
 import ServicingRouter from "./servicing.routes";
+import LoanRouter from "./loan.routes";
 // import EmailRouter from "./email.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
@@ -21,6 +22,7 @@ const routes = Router();
 
 routes.use("/auth", AuthRouter);
 routes.use("/roles", RoleRouter);
+routes.use("/loans", LoanRouter);
 routes.use("/accounts", AccountRouter);
 routes.use("/vehicles", VehicleRouter);
 routes.use("/payments", PaymentRouter);

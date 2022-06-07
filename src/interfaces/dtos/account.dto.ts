@@ -1,7 +1,10 @@
 import { Gender } from "../../valueObjects";
 import { registerDto } from ".";
+import { AccountBankDetails } from "../../entities";
 
 export class AccountDto extends registerDto {}
+
+export class AddBankDto extends AccountBankDetails {}
 
 export class UpdateAccountDto {
   firstName?: string;

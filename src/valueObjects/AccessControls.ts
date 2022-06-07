@@ -54,6 +54,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.SERVICING,
         scopes: [PermissionScope.READ],
       },
+      {
+        name: AvailableResource.LOAN,
+        scopes: [PermissionScope.READ, PermissionScope.REQUEST],
+      },
     ],
   },
   moderator: {
@@ -99,6 +103,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.SERVICING,
         scopes: [PermissionScope.READ, PermissionScope.UPDATE],
       },
+      {
+        name: AvailableResource.LOAN,
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE],
+      },
     ],
   },
   superadmin: {
@@ -133,6 +141,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.SERVICING,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.LOAN,
         scopes: [PermissionScope.ALL],
       },
     ],

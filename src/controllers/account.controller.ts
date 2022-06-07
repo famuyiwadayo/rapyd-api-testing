@@ -14,6 +14,16 @@ export default class AccountController {
     }
   }
 
+  async addBank(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { body, user } = req;
+      const result = await service.addBank(user.sub, body, user.roles);
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAccounts(req: Request, res: Response, next: NextFunction) {
     try {
       // console.log("account", req.query);
@@ -71,6 +81,15 @@ export default class AccountController {
     try {
       const id = req.params.id;
       const result = await service.deleteAccount(id, req.user.roles);
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async deleteBankInfo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await service.deleteBankInfo(req.user.sub, req.user.roles);
       sendResponse(res, 200, result);
     } catch (error) {
       sendError(error, next);

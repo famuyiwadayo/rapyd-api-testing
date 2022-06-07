@@ -8,7 +8,7 @@ import BaseEntity from "./base";
 import { Account } from "./account";
 import { PaymentPeriodType } from "../libs";
 import { Vehicle } from "./vehicle";
-import { LoanRequest } from "./loanRequest";
+// import { Loan } from "./loan";
 import { LoanSpread } from "./loanSpread";
 
 export enum FinanceCategory {
@@ -25,7 +25,7 @@ export class Finance extends BaseEntity {
   category: FinanceCategory;
 
   @prop({ refPath: "onModel" })
-  item: Vehicle | LoanRequest | string;
+  item: Vehicle | string;
 
   @prop({ type: String, required: true, enum: ["Vehicle", "LoanRequest"] })
   onModel: "Vehicle" | "LoanRequest";

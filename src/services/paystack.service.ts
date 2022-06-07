@@ -21,6 +21,7 @@ export default class PaystackService {
     reason: TransactionReason,
     callbackUrl?: string
   ): Promise<IPaystackInitTransactionResponse> {
+    const txNew = reason === TransactionReason.LOAN_PAYMENT; // don't update existing tx, create new one instead.
     const user: Account = await account
       .findById(accountId)
       .lean<Account>()
@@ -31,7 +32,8 @@ export default class PaystackService {
         amount,
         roles,
         reason,
-        itemId
+        itemId,
+        txNew
       )
     ).reference;
     callbackUrl = callbackUrl || config.paystackCallbackUrl;
