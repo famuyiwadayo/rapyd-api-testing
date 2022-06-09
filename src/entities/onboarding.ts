@@ -50,6 +50,9 @@ export class PersonalInfo {
 
   @prop()
   bvn: string;
+
+  @prop()
+  residentialAddress: string;
 }
 
 export class NextOfKin {
