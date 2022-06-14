@@ -11,7 +11,9 @@ import {
   vehicleType,
   complaint,
   servicing,
+  loanSpread,
   complaintFeedback,
+  transactionReference,
 } from "../entities";
 
 import capitalize from "lodash/capitalize";
@@ -21,6 +23,7 @@ export type SchemaTypes =
   | "loan"
   | "vehicle"
   | "guarantor"
+  | "loanSpread"
   | "vehicleColor"
   | "vehicleFeature"
   | "vehicleType"
@@ -28,6 +31,7 @@ export type SchemaTypes =
   | "complaint"
   | "onboarding"
   | "complaintFeedback"
+  | "transactionReference"
   | "servicing";
 
 export default class AccessService {
@@ -66,7 +70,9 @@ export default class AccessService {
       complaint,
       vehicleType,
       guarantor,
+      loanSpread,
       complaintFeedback,
+      transactionReference,
     };
 
     return map[schema];

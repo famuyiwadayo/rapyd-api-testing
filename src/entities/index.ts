@@ -47,10 +47,16 @@ export {
 export {
   default as transactionReference,
   TransactionReference,
+  PaymentMethod,
 } from "./transactionReference";
 
 export { default as paymentItem, PaymentItem } from "./paymentItem";
-export { default as finance, Finance, FinanceCategory } from "./finance";
+export {
+  default as finance,
+  Finance,
+  FinanceCategory,
+  FinanceStatus,
+} from "./finance";
 export {
   default as loanSpread,
   LoanSpread,

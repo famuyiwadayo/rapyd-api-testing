@@ -1,9 +1,40 @@
-import { transactionReference, TransactionReference } from "../entities";
-import { createError, getUpdateOptions, stripUpdateFields } from "../utils";
 import { generate } from "voucher-code-generator";
-import { TransactionReason } from "../valueObjects";
+
+import RoleService from "./role.service";
+import { PaginatedDocument, IPaginationFilter } from "../interfaces/ros";
+import { PermissionScope, TransactionReason } from "../valueObjects";
+import {
+  createError,
+  getUpdateOptions,
+  paginate,
+  stripUpdateFields,
+} from "../utils";
+import {
+  AvailableResource,
+  AvailableRole,
+  transactionReference,
+  TransactionReference,
+} from "../entities";
 
 export default class TransactionReferenceService {
+  public async getTransactionReferences(
+    roles: string[],
+    filters: IPaginationFilter & { paid: boolean }
+  ): Promise<PaginatedDocument<TransactionReference[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.HISTORY,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const queries: any = { paid: filters?.paid ?? false };
+
+    return await paginate("transactionReference", queries, filters, {
+      populate: ["account"],
+    });
+  }
+
   public async addTransactionReference(
     accountId: string,
     amount: number,

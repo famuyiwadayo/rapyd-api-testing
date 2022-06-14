@@ -459,6 +459,8 @@ export default class OnboardingService {
       .exec();
 
     if (!application) throw createError("Application not found", 404);
+    if (application && !application?.payment?.paid)
+      throw createError("Application fee has not been paid", 400);
 
     await Promise.all([
       account

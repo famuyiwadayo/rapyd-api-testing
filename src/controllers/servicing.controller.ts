@@ -23,6 +23,22 @@ export default class ServicingController {
     }
   }
 
+  async getCurrentUserTotalVehicleService(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const data = await service.getCurrentUserTotalVehicleService(
+        req.user.sub,
+        req.user.roles
+      );
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAllCurrentUserServicing(
     req: Request,
     res: Response,

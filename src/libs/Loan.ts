@@ -13,6 +13,9 @@
 
 import { nanoid } from "nanoid";
 import { rnd } from "../utils";
+import { addWeeks } from "date-fns";
+
+// const precision = (value: number) => +Number(value).toPrecision();
 
 export type PaymentPeriodType = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 
@@ -25,6 +28,7 @@ interface IInstallment {
   instalmentId: string;
   nextInstalmentId?: string;
   prevInstalmentId?: string;
+  paybackDate: Date;
 }
 
 interface ICalcLoan {
@@ -56,7 +60,8 @@ export default class Loan {
     diminishing: boolean,
     capitalSum: number,
     interestSum: number,
-    paymentPeriod = PaymentPeriod.MONTHLY
+    paymentPeriod = PaymentPeriod.MONTHLY,
+    prevPayDate?: Date
   ): IInstallment {
     let capital: number;
     let interest: number;
@@ -93,6 +98,7 @@ export default class Loan {
       remain: amount - capitalSum - capital,
       interestSum: interestSum + interest,
       instalmentId: nanoid(24),
+      paybackDate: addWeeks(prevPayDate ?? new Date(), 1),
     };
   }
 
@@ -132,7 +138,8 @@ export default class Loan {
         diminishing,
         capitalSum,
         interestSum,
-        PaymentPeriod[period]
+        PaymentPeriod[period],
+        this.installments[i - 1]?.paybackDate
       );
 
       sum += inst.installment;

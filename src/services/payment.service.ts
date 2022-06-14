@@ -53,6 +53,13 @@ export default class PaymentService {
           body.amount
         );
         break;
+      case TransactionReason.AUTO_PAYBACK:
+        if (!body.itemId) throw createError("itemId is required", 400);
+        await FinanceService.checkFianceBeforePaymentUpdate(
+          body.itemId,
+          body.amount
+        );
+        break;
     }
 
     return await new PaystackService().initializeTransaction(
@@ -237,6 +244,21 @@ export default class PaymentService {
               txRef?.account as string,
               txRef?.amount,
               txRef?._id as string
+            ),
+          ]);
+          break;
+        case TransactionReason.AUTO_PAYBACK:
+          await Promise.all([
+            await transactionReferenceService.markReferenceUsed(
+              data.reference,
+              true
+            ),
+            await FinanceService.updatePayback(
+              txRef?.itemId,
+              txRef?.account as string,
+              txRef?.amount,
+              txRef?._id as string,
+              txRef?.paymentMethod
             ),
           ]);
           break;

@@ -9,11 +9,17 @@ import { Account } from "./account";
 import { PaymentPeriodType } from "../libs";
 import { Vehicle } from "./vehicle";
 // import { Loan } from "./loan";
-import { LoanSpread } from "./loanSpread";
+// import { LoanSpread } from "./loanSpread";
 
 export enum FinanceCategory {
   LOAN = "loan",
   AUTO = "auto",
+}
+
+export enum FinanceStatus {
+  IN_INSTALMENTS = "in_instalments",
+  TERMINATED = "terminated",
+  PAID = "paid",
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
@@ -32,6 +38,9 @@ export class Finance extends BaseEntity {
 
   @prop()
   principal: number;
+
+  @prop()
+  duration: number;
 
   @prop()
   apr: number; // annual percentage rate
@@ -63,11 +72,14 @@ export class Finance extends BaseEntity {
   @prop({ default: 0 })
   remainingDebt: number;
 
-  @prop({ ref: () => LoanSpread, required: false })
-  prevInstalment?: Ref<LoanSpread>;
+  @prop({ required: false })
+  prevInstalmentId: string;
 
-  @prop({ ref: () => LoanSpread, required: false })
-  nextInstalment?: Ref<LoanSpread>;
+  @prop({ required: false })
+  nextInstalmentId: string;
+
+  @prop({ enum: FinanceStatus, default: FinanceStatus.IN_INSTALMENTS })
+  status: FinanceStatus;
 }
 
 export default getModelForClass(Finance);

@@ -17,4 +17,12 @@ router.post(
   controller.getPeriodicVehicleInstalment
 );
 
+router.get(
+  "/vehicles/:vehicleId/analysis",
+  authGuard,
+  controller.getCurrentUserVehicleFinanceAnalysis
+);
+
+router.get("/vehicles/:vehicleId/spreads", authGuard, controller.getSpreads);
+
 export default router;

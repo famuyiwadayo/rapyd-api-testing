@@ -11,6 +11,11 @@ router.put("/:id/comment", authGuard, controller.updateServicingComment);
 
 router.get("/", authGuard, controller.getAllServicing);
 router.get("/me", authGuard, controller.getAllCurrentUserServicing);
+router.get(
+  "/totalCount",
+  authGuard,
+  controller.getCurrentUserTotalVehicleService
+);
 
 router.delete("/:id", authGuard, controller.deleteServicing);
 

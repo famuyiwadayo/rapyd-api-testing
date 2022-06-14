@@ -22,4 +22,7 @@ export type {
   IStandardizedInitTransactionResponse,
 } from "./paystack.ro";
 
-export type { GetPeriodicVehicleInstalmentRo } from "./finance.ro";
+export type {
+  GetPeriodicVehicleInstalmentRo,
+  GetCurrentUserVehicleFinanceAnalysis,
+} from "./finance.ro";

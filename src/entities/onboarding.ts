@@ -182,7 +182,7 @@ export class DocumentUpload extends BaseEntity {
 // }
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class GuarantorInfo extends BaseEntity {
-  @prop({ type: () => Guarantor })
+  @prop({ type: () => Guarantor, _id: false })
   guarantors: Guarantor[];
 
   @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
@@ -246,13 +246,13 @@ export class Onboarding extends BaseEntity {
   @prop({ _id: false, type: () => DocumentUpload })
   documents: DocumentUpload;
 
-  @prop({ type: () => GuarantorInfo })
+  @prop({ type: () => GuarantorInfo, _id: false })
   guarantorInfo: GuarantorInfo;
 
-  @prop({ type: () => ApplicationStatus })
+  @prop({ type: () => ApplicationStatus, _id: false })
   applicationStatus: ApplicationStatus;
 
-  @prop({ type: () => HirePurchaseContract })
+  @prop({ type: () => HirePurchaseContract, _id: false })
   hirePurchaseContract: HirePurchaseContract;
 
   @prop({ ref: () => Account })
@@ -264,10 +264,10 @@ export class Onboarding extends BaseEntity {
   @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
   status: ApplicationStatusEnum;
 
-  @prop({ type: () => PaymentInfo })
+  @prop({ type: () => PaymentInfo, _id: false })
   payment: PaymentInfo;
 
-  @prop({ type: () => VehicleInfo })
+  @prop({ type: () => VehicleInfo, _id: false })
   vehicleInfo: VehicleInfo;
 
   @prop()

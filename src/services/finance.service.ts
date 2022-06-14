@@ -1,5 +1,9 @@
 import RoleService from "./role.service";
-import { PermissionScope, TransactionReason } from "../valueObjects";
+import {
+  PaystackChargeStatus,
+  PermissionScope,
+  TransactionReason,
+} from "../valueObjects";
 import {
   vehicle,
   Vehicle,
@@ -11,20 +15,113 @@ import {
   account,
   Account,
   Finance,
+  LoanSpread,
+  // loanSpread,
+  LoanPaymentStatus,
+  loanSpread,
+  FinanceStatus,
+  PaymentMethod,
 } from "../entities";
 import {
+  GetCurrentUserVehicleFinanceAnalysis,
   GetPeriodicVehicleInstalmentRo,
+  IPaginationFilter,
   IPaystackInitTransactionResponse,
+  PaginatedDocument,
+  // PaginatedDocument,
 } from "../interfaces/ros";
 import { GetPeriodicVehicleInstalmentDto } from "../interfaces/dtos";
-import { createError, getUpdateOptions, rnd, validateFields } from "../utils";
+import {
+  createError,
+  getUpdateOptions,
+  paginate,
+  rnd,
+  validateFields,
+} from "../utils";
 import { Loan } from "../libs";
 import config from "../config";
 import AccountService from "./account.service";
 import VehicleService from "./vehicle.service";
 import PaymentService from "./payment.service";
 
+import consola from "consola";
+import { isPast } from "date-fns";
+import { clamp } from "lodash";
+
 export default class FinanceService {
+  async getSpreads(
+    sub: string,
+    vehicleId: string,
+    roles: string[],
+    filters?: IPaginationFilter
+  ): Promise<PaginatedDocument<LoanSpread[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const fin = await finance
+      .findOne({ item: vehicleId, account: sub })
+      .lean<Finance>()
+      .exec();
+    if (!fin) throw createError("Vehicle finance details not found");
+
+    return await paginate(
+      "loanSpread",
+      { account: sub, finance: fin?._id },
+      filters,
+      { sort: { paybackDue: "asc" } }
+    );
+  }
+
+  async getCurrentUserVehicleFinanceAnalysis(
+    sub: string,
+    vehicleId: string,
+    roles: string[]
+  ): Promise<GetCurrentUserVehicleFinanceAnalysis> {
+    await RoleService.requiresPermission(
+      [AvailableRole.DRIVER],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const fin = await finance
+      .findOne({
+        account: sub,
+        category: FinanceCategory.AUTO,
+        item: vehicleId,
+      })
+      .lean<Finance>()
+      .exec();
+
+    if (!fin) throw createError("Vehicle finance details not found");
+
+    const total = fin?.principal + fin?.cumulativeInterest;
+    const debt = fin?.remainingDebt;
+    const amountPaid = fin?.amountPaid;
+
+    return {
+      finance: fin,
+      analysis: {
+        balance: {
+          value: debt,
+          percentage: (debt / total) * 100,
+        },
+        total: {
+          value: total,
+          percentage: (total / total) * 100,
+        },
+        amountPaid: {
+          value: amountPaid,
+          percentage: (amountPaid / total) * 100,
+        },
+      },
+    };
+  }
+
   async getPeriodicVehicleInstalment(
     vehicleId: string,
     input: GetPeriodicVehicleInstalmentDto,
@@ -97,8 +194,8 @@ export default class FinanceService {
       ),
     ]);
 
-    if (checks && !checks[0]) throw createError("Account not found", 200);
-    if (checks && !checks[1]) throw createError("Vehicle not found", 200);
+    if (checks && !checks[0]) throw createError("Account not found", 404);
+    if (checks && !checks[1]) throw createError("Vehicle not found", 404);
 
     const fin = await finance
       .findOne({ account: accountId, item: vehicleId })
@@ -106,18 +203,26 @@ export default class FinanceService {
       .lean<Finance>()
       .exec();
 
+    const initiatePayment = async () =>
+      await FinanceService._makeInitialDeposit(
+        accountId,
+        vehicleId,
+        input,
+        roles
+      );
+
     if (fin) {
-      if (!fin?.initialDepositPaid && fin?.initialDepositPaymentRef)
-        await new PaymentService().checkStatus(fin?.initialDepositPaymentRef);
+      if (!fin?.initialDepositPaid && fin?.initialDepositPaymentRef) {
+        const paymentStatus = await new PaymentService().checkStatus(
+          fin?.initialDepositPaymentRef
+        );
+        if (paymentStatus.data.status !== PaystackChargeStatus.SUCCESS)
+          return await initiatePayment();
+      }
       return fin;
     }
 
-    return await FinanceService._makeInitialDeposit(
-      accountId,
-      vehicleId,
-      input,
-      roles
-    );
+    return await initiatePayment();
   }
 
   protected static async _makeInitialDeposit(
@@ -138,7 +243,7 @@ export default class FinanceService {
       throw createError(`Vehicle info not found`, 404);
 
     const inst = await new FinanceService().getPeriodicVehicleInstalment(
-      vehicleId,
+      acc?.vehicleInfo?.vehicle as string,
       {
         ...input,
         months: acc?.vehicleInfo?.duration,
@@ -157,6 +262,7 @@ export default class FinanceService {
           category: FinanceCategory.AUTO,
           item: vehicleId,
           onModel: "Vehicle",
+          duration: acc?.vehicleInfo?.duration,
           principal: inst?.vehiclePrice,
           cumulativeInterest: inst?.totalInterest,
           instalment: inst?.instalment,
@@ -196,6 +302,10 @@ export default class FinanceService {
     if (!fin) throw createError("Vehicle finance details not found", 404);
     if (!acc) throw createError("Account not found", 404);
 
+    const remainingDebt = +fin?.totalSumWithInterest;
+
+    // await FinanceService.spreadVehicleFinances(acc?._id!, remainingDebt, fin);
+
     await Promise.all([
       account
         .findByIdAndUpdate(
@@ -215,11 +325,315 @@ export default class FinanceService {
           {
             initialDepositPaid: true,
             amountPaid: fin?.initialDeposit,
-            remainingDebt: +fin?.totalSumWithInterest - +fin?.initialDeposit,
+            remainingDebt,
           },
           { new: true }
         )
         .lean<Finance>()
+        .exec(),
+      FinanceService.spreadVehicleFinances(acc?._id!, remainingDebt, fin),
+    ]);
+  }
+
+  private static async spreadVehicleFinances(
+    accountId: string,
+    debt: number,
+    fin: Finance
+  ) {
+    if (!fin || !debt) return;
+    const apr = fin?.apr ?? config.ANNUAL_PERCENTAGE_RATE;
+    const totalWeeks = (fin?.duration / 12) * 52;
+    const calc = new Loan().calc(debt, totalWeeks, apr, 0, "WEEKLY");
+
+    const spreads = calc?.installments?.map(
+      (inst) =>
+        ({
+          account: accountId,
+          finance: fin?._id as string,
+          instalment: fin?.instalment,
+          instalmentId: inst?.instalmentId,
+          nextInstalmentId: inst?.nextInstalmentId,
+          prevInstalmentId: inst?.prevInstalmentId,
+          isOverdue: false,
+          paybackDue: inst?.paybackDate,
+          status: LoanPaymentStatus.PENDING,
+        } as LoanSpread)
+    );
+
+    const nextSpread = spreads[0];
+
+    await Promise.all([
+      loanSpread.insertMany([...spreads], { lean: true }),
+      finance
+        .findByIdAndUpdate(
+          fin?._id,
+          {
+            prevInstalmentId: nextSpread?.prevInstalmentId,
+            nextInstalmentId: nextSpread?.instalmentId,
+          },
+          { new: true }
+        )
+        .lean()
+        .exec(),
+    ]);
+
+    console.log("FINANCE SPREADS", accountId, spreads);
+  }
+
+  public static async checkFianceBeforePaymentUpdate(
+    financeId: string,
+    amount: number
+  ) {
+    const fin = await finance.findById(financeId).lean<Finance>().exec();
+
+    if (!fin) throw createError("Vehicle finance details not found", 404);
+
+    const debt = Math.ceil(fin?.remainingDebt ?? 0);
+
+    if (debt === 0) {
+      if (fin?.status && fin?.status !== FinanceStatus.PAID)
+        await finance
+          .findByIdAndUpdate(financeId, { status: FinanceStatus.PAID })
+          .lean()
+          .exec();
+      throw createError("Vehicle finance has been fully paid", 400);
+    }
+
+    if (amount > debt)
+      throw createError(
+        `Amount is larger than vehicle finance debt: N${Number(
+          debt
+        ).toLocaleString()}`,
+        400
+      );
+
+    return;
+  }
+
+  private static async updateSpread(
+    spread: LoanSpread,
+    amount: number,
+    txRef: string,
+    method: PaymentMethod
+  ) {
+    let toRun: any = [];
+    let nextInstalmentId: string = "";
+    let prevInstalmentId: string = "";
+
+    if (!spread) return;
+
+    const isPaymentSufficient =
+      amount >= spread.instalment ||
+      amount >= spread.instalment - spread.amountPaid;
+
+    let spreadAmt = amount >= spread.instalment ? spread.instalment : amount;
+
+    // if (spread?.amountPaid < spread?.instalment)
+    //   spreadAmt = spread?.instalment - spread?.amountPaid;
+
+    const updates: any = {
+      txRef,
+      paymentMethod: method,
+      $inc: { amountPaid: spreadAmt },
+    };
+
+    if (isPaymentSufficient) {
+      Object.assign(updates, {
+        paidOn: new Date(),
+        status: LoanPaymentStatus.CONFIRMED,
+        paid: true,
+        isOverdue: isPast(spread.paybackDue),
+      });
+
+      nextInstalmentId = spread.nextInstalmentId;
+      prevInstalmentId = spread.instalmentId;
+    }
+
+    if (!isPaymentSufficient) {
+      Object.assign(updates, {
+        paid: false,
+        partPaidOn: new Date(),
+        status: LoanPaymentStatus.PART_PAID,
+        isOverdue: isPast(spread.paybackDue),
+      });
+
+      nextInstalmentId = spread.instalmentId;
+      prevInstalmentId = spread.prevInstalmentId;
+    }
+
+    toRun = [
+      loanSpread
+        .findByIdAndUpdate(spread?._id, updates, { new: true })
+        .lean<LoanSpread>()
+        .exec(),
+    ];
+
+    /**
+     * if the spread is the last to update | the update amount is less
+     * than the spread instalment, then set the next and prev instalment
+     * on the finance document for references later on.
+     * */
+
+    if (amount <= spread.instalment) {
+      toRun = [
+        ...toRun,
+        finance.findByIdAndUpdate(
+          spread?.finance,
+          {
+            nextInstalmentId,
+            prevInstalmentId,
+          },
+          { new: true }
+        ),
+      ];
+    }
+
+    const res = await Promise.all(toRun);
+    spread = res[0];
+    // console.log("Spread", spread, amount);
+
+    return res;
+  }
+
+  private static async checkSpreadPaidInPart(
+    fin: Finance,
+    amount: number,
+    txRef: string,
+    method: PaymentMethod
+  ): Promise<number> {
+    let spread = await loanSpread
+      .findOne({
+        account: fin?.account,
+        finance: fin?._id,
+        paid: false,
+        amountPaid: { $lt: fin?.instalment },
+        status: LoanPaymentStatus.PART_PAID,
+      })
+      .sort({ paybackDue: "asc" })
+      .lean<LoanSpread>()
+      .exec();
+
+    if (!spread) return amount;
+
+    const remainingPartAmount = spread?.instalment - spread?.amountPaid;
+
+    spread = await loanSpread
+      .findByIdAndUpdate(
+        spread._id,
+        {
+          $inc: { amountPaid: remainingPartAmount },
+          paidOn: new Date(),
+          status: LoanPaymentStatus.CONFIRMED,
+          paid: true,
+          isOverdue: isPast(spread.paybackDue),
+          txRef,
+          paymentMethod: method,
+        },
+        { new: true }
+      )
+      .lean<LoanSpread>()
+      .exec();
+
+    // console.log("SPREAD PAID IN PART", spread);
+
+    return amount - remainingPartAmount;
+  }
+
+  private static async processSpreadUpdates(
+    fin: Finance,
+    amount: number,
+    txRef: string,
+    method: PaymentMethod
+  ) {
+    const toRun: any = [];
+
+    if (amount > fin?.instalment) {
+      amount = await FinanceService.checkSpreadPaidInPart(
+        fin,
+        amount,
+        txRef,
+        method
+      );
+      // determine how many loanSpread can we get in the amount
+      const spreadsLimit = Math.ceil(amount / Math.floor(fin?.instalment));
+      let spreads = await loanSpread
+        .find({
+          account: fin?.account,
+          finance: fin?._id,
+          paid: false,
+          amountPaid: { $lt: fin?.instalment },
+        })
+        .sort({ paybackDue: "asc" })
+        .limit(spreadsLimit)
+        .lean<LoanSpread[]>()
+        .exec();
+
+      // console.log("SPREADS ", spreads, spreadsLimit, amount);
+
+      spreads.forEach((spread, i) => {
+        toRun.push(
+          FinanceService.updateSpread(
+            spread,
+            amount - fin?.instalment * i,
+            txRef,
+            method
+          )
+        );
+      });
+    } else {
+      const spread = await loanSpread
+        .findOne({
+          account: fin?.account,
+          finance: fin?._id,
+          category: FinanceCategory.AUTO,
+          instalmentId: fin?.nextInstalmentId,
+        })
+        .lean<LoanSpread>()
+        .exec();
+
+      // console.log("Single Spread Update", spread, amount);
+      if (spread && spread?.status !== LoanPaymentStatus.CONFIRMED)
+        toRun.push(FinanceService.updateSpread(spread, amount, txRef, method));
+    }
+
+    if (toRun && toRun.length > 0) await Promise.all(toRun);
+    return;
+  }
+
+  public static async updatePayback(
+    financeId: string,
+    account: string,
+    amount: number,
+    txRef: string,
+    method: PaymentMethod
+  ) {
+    const updates = {
+      $inc: { amountPaid: amount, remainingDebt: -clamp(amount, 0, amount) },
+    };
+
+    const fin = await finance
+      .findOne({ _id: financeId, account, remainingDebt: { $gt: 0 } })
+      .lean<Finance>()
+      .exec();
+
+    if (!fin)
+      consola.error(
+        "Vehicle finance payment update failed, finance not found",
+        {
+          financeId,
+          amount,
+          txRef,
+        }
+      );
+
+    if (fin?.remainingDebt - amount === 0)
+      Object.assign(updates, { status: FinanceStatus.PAID });
+
+    return await Promise.all([
+      FinanceService.processSpreadUpdates(fin, amount, txRef, method),
+      finance
+        .findByIdAndUpdate(fin?._id, updates, { new: true })
+        .lean<Loan>()
         .exec(),
     ]);
   }

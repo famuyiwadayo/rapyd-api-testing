@@ -48,6 +48,7 @@ export default class VehicleService {
       model?: string[];
       year?: string; // hypen separated string of year, 2000 - 20222
       searchPhrase?: string;
+      mileage?: string;
     },
     dryRun?: boolean
   ): Promise<PaginatedDocument<Vehicle[]>> {
@@ -70,6 +71,9 @@ export default class VehicleService {
     const gearboxs = String(filters?.gearbox ?? "").split(",");
     const features = String(filters?.features ?? "").split(",");
     const [fromYear, toYear] = String(filters?.year ?? "")
+      .split("-")
+      .map((v) => String(v).trim());
+    const [fromMile, toMile] = String(filters?.mileage ?? "")
       .split("-")
       .map((v) => String(v).trim());
 
@@ -120,6 +124,19 @@ export default class VehicleService {
       queries.$and!.push({
         year: { $gte: fromYear, $lte: toYear },
       });
+    }
+    if (filters?.mileage) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      if (fromMile && toMile) {
+        queries.$and!.push({
+          year: { $gte: fromMile, $lte: toMile },
+        });
+      }
+      if (fromMile && !toMile) {
+        queries.$and!.push({
+          year: { $lte: fromMile },
+        });
+      }
     }
 
     if (filters?.searchPhrase) {

@@ -16,6 +16,21 @@ import {
 } from "../utils";
 
 export default class ServicingService {
+  async getCurrentUserTotalVehicleService(
+    sub: string,
+    roles: string[]
+  ): Promise<{ count: number }> {
+    await RoleService.requiresPermission(
+      [AvailableRole.DRIVER],
+      roles,
+      AvailableResource.SERVICING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const count = await servicing.countDocuments({ driver: sub }).lean().exec();
+    return { count };
+  }
+
   async createServicing(
     input: CreateServicingDto,
     roles: string[]
