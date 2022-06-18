@@ -46,6 +46,9 @@ export class LoanSpread extends BaseEntity {
   paybackDue: Date;
 
   @prop()
+  debt: number;
+
+  @prop()
   paidOn: Date;
 
   @prop()

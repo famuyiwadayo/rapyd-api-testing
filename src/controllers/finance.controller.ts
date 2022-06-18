@@ -5,11 +5,54 @@ import { sendError, sendResponse } from "../utils";
 const service = new FinanceService();
 
 export default class FinanceController {
+  async getVehicleFinance(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await service.getVechicleFinance(
+        req.params.vehicleId,
+        req.user.roles
+      );
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getCurrentUserVehicleFinance(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const data = await service.getCurrentUserVechicleFinance(
+        req.user.sub,
+        req.params.vehicleId,
+        req.user.roles
+      );
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getCurrentUserSpreads(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await service.getCurrentUserSpreads(
+        req.user.sub,
+        req.params.vehicleId,
+        req.user.roles,
+        req.query
+      );
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getSpreads(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.getSpreads(
-        req.user.sub,
-        req.params.vehicleId,
+        req.params.accountId,
+        req.params.financeId,
         req.user.roles,
         req.query
       );

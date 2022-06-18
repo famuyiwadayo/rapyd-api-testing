@@ -169,6 +169,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.GUARANTOR,
         scopes: [PermissionScope.ALL],
       },
+      {
+        name: AvailableResource.HISTORY,
+        scopes: [PermissionScope.ALL],
+      },
     ],
   },
 };

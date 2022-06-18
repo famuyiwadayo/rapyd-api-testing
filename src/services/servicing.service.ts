@@ -67,6 +67,23 @@ export default class ServicingService {
     return await paginate("servicing", {}, filters, { populate: ["driver"] });
   }
 
+  async getCurrentUserServicingHistory(
+    sub: string,
+    roles: string[],
+    filters: IPaginationFilter = { limit: "10", page: "1" }
+  ): Promise<PaginatedDocument<Servicing[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.DRIVER],
+      roles,
+      AvailableResource.SERVICING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    return await paginate("servicing", { driver: sub }, filters, {
+      populate: ["driver"],
+    });
+  }
+
   // async getServicingById(
   //   id: string,
   //   roles: string[]
@@ -80,22 +97,22 @@ export default class ServicingService {
 
   // }
 
-  async getAllCurrentUserServicing(
-    accountId: string,
-    roles: string[],
-    filters: IPaginationFilter = { limit: "10", page: "1" }
-  ): Promise<PaginatedDocument<Servicing[]>> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.DRIVER],
-      roles,
-      AvailableResource.SERVICING,
-      [PermissionScope.READ, PermissionScope.ALL]
-    );
+  // async getCurrentUserServicing(
+  //   accountId: string,
+  //   roles: string[],
+  //   filters: IPaginationFilter = { limit: "10", page: "1" }
+  // ): Promise<PaginatedDocument<Servicing[]>> {
+  //   await RoleService.requiresPermission(
+  //     [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.DRIVER],
+  //     roles,
+  //     AvailableResource.SERVICING,
+  //     [PermissionScope.READ, PermissionScope.ALL]
+  //   );
 
-    return await paginate("servicing", { driver: accountId }, filters, {
-      populate: ["driver"],
-    });
-  }
+  //   return await paginate("servicing", { driver: accountId }, filters, {
+  //     populate: ["driver"],
+  //   });
+  // }
 
   async updateServicingComment(
     serviceId: string,

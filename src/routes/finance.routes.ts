@@ -5,6 +5,8 @@ import { FinanceController } from "../controllers";
 const router = Router();
 const controller = new FinanceController();
 
+router.get("/:financeId/spreads/:accountId", authGuard, controller.getSpreads);
+
 router.post(
   "/vehicles/:vehicleId/deposit",
   authGuard,
@@ -23,6 +25,18 @@ router.get(
   controller.getCurrentUserVehicleFinanceAnalysis
 );
 
-router.get("/vehicles/:vehicleId/spreads", authGuard, controller.getSpreads);
+router.get(
+  "/vehicles/:vehicleId/me",
+  authGuard,
+  controller.getCurrentUserVehicleFinance
+);
+
+router.get("/vehicles/:vehicleId", authGuard, controller.getVehicleFinance);
+
+router.get(
+  "/vehicles/:vehicleId/spreads",
+  authGuard,
+  controller.getCurrentUserSpreads
+);
 
 export default router;

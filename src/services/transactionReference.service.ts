@@ -19,7 +19,7 @@ import {
 export default class TransactionReferenceService {
   public async getTransactionReferences(
     roles: string[],
-    filters: IPaginationFilter & { paid: boolean }
+    filters: IPaginationFilter & { paid?: boolean; reason?: TransactionReason }
   ): Promise<PaginatedDocument<TransactionReference[]>> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
@@ -28,7 +28,19 @@ export default class TransactionReferenceService {
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const queries: any = { paid: filters?.paid ?? false };
+    const reasons = String(filters?.reason ?? "").split(",");
+
+    let queries: { $and?: any[]; $text?: { $search: string } } = {};
+    if (filters?.paid) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({ used: filters?.paid });
+    }
+    if (filters?.reason) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: reasons.map((reason) => ({ reason })),
+      });
+    }
 
     return await paginate("transactionReference", queries, filters, {
       populate: ["account"],
@@ -92,12 +104,24 @@ export default class TransactionReferenceService {
 
   public async getTransactionReference(
     reference: string,
-    validate = true
+    validate = true,
+    roles?: string[],
+    authenticate = false
   ): Promise<TransactionReference> {
-    const txRef: TransactionReference = await transactionReference
+    if (roles && authenticate)
+      await RoleService.requiresPermission(
+        [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+        roles,
+        AvailableResource.HISTORY,
+        [PermissionScope.READ, PermissionScope.ALL]
+      );
+
+    let txRef = transactionReference
       .findOne({ reference })
+      .populate("account")
       .lean<TransactionReference>()
       .exec();
+
     if (!txRef && validate)
       throw createError(`Transaction reference not found`, 400);
     return txRef;

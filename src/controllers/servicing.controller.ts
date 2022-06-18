@@ -45,7 +45,7 @@ export default class ServicingController {
     next: NextFunction
   ) {
     try {
-      const data = await service.getAllCurrentUserServicing(
+      const data = await service.getCurrentUserServicingHistory(
         req.user.sub,
         req.user.roles,
         req.query

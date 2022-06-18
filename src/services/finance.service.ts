@@ -49,7 +49,7 @@ import { isPast } from "date-fns";
 import { clamp } from "lodash";
 
 export default class FinanceService {
-  async getSpreads(
+  async getCurrentUserSpreads(
     sub: string,
     vehicleId: string,
     roles: string[],
@@ -74,6 +74,69 @@ export default class FinanceService {
       filters,
       { sort: { paybackDue: "asc" } }
     );
+  }
+
+  async getSpreads(
+    accountId: string,
+    financeId: string,
+    roles: string[],
+    filters?: IPaginationFilter
+  ): Promise<PaginatedDocument<LoanSpread[]>> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    console.log({ accountId, financeId });
+
+    return await paginate(
+      "loanSpread",
+      { account: accountId, finance: financeId },
+      filters,
+      { sort: { paybackDue: "asc" } }
+    );
+  }
+
+  async getCurrentUserVechicleFinance(
+    sub: string,
+    vehicleId: string,
+    roles: string[]
+  ): Promise<Finance> {
+    await RoleService.requiresPermission(
+      [AvailableRole.DRIVER],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const fin = await finance
+      .findOne({ item: vehicleId, account: sub })
+      .lean<Finance>()
+      .exec();
+    if (!fin) throw createError("Vehicle finance details not found");
+    return fin;
+  }
+
+  async getVechicleFinance(
+    vehicleId: string,
+    roles: string[]
+  ): Promise<Finance> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const fin = await finance
+      .findOne({ item: vehicleId })
+      .lean<Finance>()
+      .exec();
+
+    if (!fin) throw createError("Vehicle finance details not found");
+    return fin;
   }
 
   async getCurrentUserVehicleFinanceAnalysis(
@@ -414,7 +477,9 @@ export default class FinanceService {
     spread: LoanSpread,
     amount: number,
     txRef: string,
-    method: PaymentMethod
+    method: PaymentMethod,
+    debt: number,
+    index = 1
   ) {
     let toRun: any = [];
     let nextInstalmentId: string = "";
@@ -427,6 +492,10 @@ export default class FinanceService {
       amount >= spread.instalment - spread.amountPaid;
 
     let spreadAmt = amount >= spread.instalment ? spread.instalment : amount;
+    let rDebt =
+      amount >= spread.instalment
+        ? debt - spread.instalment * (index + 1)
+        : debt - spread.instalment * index - amount;
 
     // if (spread?.amountPaid < spread?.instalment)
     //   spreadAmt = spread?.instalment - spread?.amountPaid;
@@ -434,6 +503,7 @@ export default class FinanceService {
     const updates: any = {
       txRef,
       paymentMethod: method,
+      debt: clamp(rDebt, 0, debt),
       $inc: { amountPaid: spreadAmt },
     };
 
@@ -490,7 +560,7 @@ export default class FinanceService {
 
     const res = await Promise.all(toRun);
     spread = res[0];
-    // console.log("Spread", spread, amount);
+    // console.log("Spread", spread, { amount, index, rDebt, debt });
 
     return res;
   }
@@ -499,8 +569,9 @@ export default class FinanceService {
     fin: Finance,
     amount: number,
     txRef: string,
-    method: PaymentMethod
-  ): Promise<number> {
+    method: PaymentMethod,
+    debt: number
+  ): Promise<{ amount: number; debt: number }> {
     let spread = await loanSpread
       .findOne({
         account: fin?.account,
@@ -513,15 +584,17 @@ export default class FinanceService {
       .lean<LoanSpread>()
       .exec();
 
-    if (!spread) return amount;
+    if (!spread) return { amount, debt };
 
     const remainingPartAmount = spread?.instalment - spread?.amountPaid;
+    const remainingDebt = debt - remainingPartAmount;
 
     spread = await loanSpread
       .findByIdAndUpdate(
         spread._id,
         {
           $inc: { amountPaid: remainingPartAmount },
+          debt: clamp(remainingDebt, 0, debt),
           paidOn: new Date(),
           status: LoanPaymentStatus.CONFIRMED,
           paid: true,
@@ -536,26 +609,29 @@ export default class FinanceService {
 
     // console.log("SPREAD PAID IN PART", spread);
 
-    return amount - remainingPartAmount;
+    return { amount: amount - remainingPartAmount, debt: remainingDebt };
   }
 
   private static async processSpreadUpdates(
     fin: Finance,
     amount: number,
     txRef: string,
-    method: PaymentMethod
+    method: PaymentMethod,
+    debt: number
   ) {
     const toRun: any = [];
 
     if (amount > fin?.instalment) {
-      amount = await FinanceService.checkSpreadPaidInPart(
-        fin,
-        amount,
-        txRef,
-        method
-      );
+      const { amount: rAmt, debt: rDebt } =
+        await FinanceService.checkSpreadPaidInPart(
+          fin,
+          amount,
+          txRef,
+          method,
+          debt
+        );
       // determine how many loanSpread can we get in the amount
-      const spreadsLimit = Math.ceil(amount / Math.floor(fin?.instalment));
+      const spreadsLimit = Math.ceil(rAmt / Math.floor(fin?.instalment));
       let spreads = await loanSpread
         .find({
           account: fin?.account,
@@ -574,9 +650,11 @@ export default class FinanceService {
         toRun.push(
           FinanceService.updateSpread(
             spread,
-            amount - fin?.instalment * i,
+            rAmt - fin?.instalment * i,
             txRef,
-            method
+            method,
+            rDebt,
+            i
           )
         );
       });
@@ -593,7 +671,9 @@ export default class FinanceService {
 
       // console.log("Single Spread Update", spread, amount);
       if (spread && spread?.status !== LoanPaymentStatus.CONFIRMED)
-        toRun.push(FinanceService.updateSpread(spread, amount, txRef, method));
+        toRun.push(
+          FinanceService.updateSpread(spread, amount, txRef, method, debt)
+        );
     }
 
     if (toRun && toRun.length > 0) await Promise.all(toRun);
@@ -630,7 +710,13 @@ export default class FinanceService {
       Object.assign(updates, { status: FinanceStatus.PAID });
 
     return await Promise.all([
-      FinanceService.processSpreadUpdates(fin, amount, txRef, method),
+      FinanceService.processSpreadUpdates(
+        fin,
+        amount,
+        txRef,
+        method,
+        fin?.remainingDebt
+      ),
       finance
         .findByIdAndUpdate(fin?._id, updates, { new: true })
         .lean<Loan>()
