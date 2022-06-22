@@ -17,7 +17,7 @@ export default class FinanceController {
   async getVehicleFinance(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.getVechicleFinance(
-        req.params.vehicleId,
+        req.params.id,
         req.user.roles
       );
       sendResponse(res, 200, data);

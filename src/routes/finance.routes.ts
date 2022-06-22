@@ -33,7 +33,7 @@ router.get(
   controller.getCurrentUserVehicleFinance
 );
 
-router.get("/drivers/:accountId", authGuard, controller.getVehicleFinance);
+router.get("/drivers/:id", authGuard, controller.getVehicleFinance);
 
 router.get(
   "/vehicles/:vehicleId/spreads",
