@@ -185,15 +185,15 @@ export default class FinanceService {
       analysis: {
         balance: {
           value: debt,
-          percentage: (debt / total) * 100,
+          percentage: clamp((debt / total) * 100, 0, 100),
         },
         total: {
           value: total,
-          percentage: (total / total) * 100,
+          percentage: clamp((total / total) * 100, 0, 100),
         },
         amountPaid: {
           value: amountPaid,
-          percentage: (amountPaid / total) * 100,
+          percentage: clamp((amountPaid / total) * 100, 0, 100),
         },
       },
     };
