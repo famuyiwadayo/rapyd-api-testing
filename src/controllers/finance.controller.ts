@@ -5,6 +5,15 @@ import { sendError, sendResponse } from "../utils";
 const service = new FinanceService();
 
 export default class FinanceController {
+  async getFinanceById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await service.getFinanceById(req.params.id, req.user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getVehicleFinance(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.getVechicleFinance(

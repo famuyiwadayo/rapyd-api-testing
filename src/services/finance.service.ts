@@ -139,6 +139,20 @@ export default class FinanceService {
     return fin;
   }
 
+  async getFinanceById(financeId: string, roles: string[]): Promise<Finance> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const fin = await finance.findById(financeId).lean<Finance>().exec();
+
+    if (!fin) throw createError("Vehicle finance details not found");
+    return fin;
+  }
+
   async getCurrentUserVehicleFinanceAnalysis(
     sub: string,
     vehicleId: string,
@@ -724,3 +738,11 @@ export default class FinanceService {
     ]);
   }
 }
+
+// /payment-details/refId~vechicleId
+
+// CALL: `/transactions/:refId`
+// CALL: `/finances/vehicles/:vechicleId`
+
+// - after getting the data from `/finances/vehicles/:vechicleId`
+// CALL: `/finances/:financeId/spreads/:accountId`
