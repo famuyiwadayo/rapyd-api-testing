@@ -120,7 +120,7 @@ export default class FinanceService {
   }
 
   async getVechicleFinance(
-    vehicleId: string,
+    accountId: string,
     roles: string[]
   ): Promise<Finance> {
     await RoleService.requiresPermission(
@@ -131,7 +131,7 @@ export default class FinanceService {
     );
 
     const fin = await finance
-      .findOne({ item: vehicleId })
+      .findOne({ account: accountId })
       .lean<Finance>()
       .exec();
 

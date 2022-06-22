@@ -99,6 +99,16 @@ export default class LoanService {
     return l;
   }
 
+  // async checkEligibility(sub: string, roles: stirng[]): Promise<{isEligible: boolean; minRange: number, maxRange: number}> {
+  //   await RoleService.requiresPermission(
+  //     [AvailableRole.DRIVER],
+  //     roles,
+  //     AvailableResource.LOAN,
+  //     [PermissionScope.REQUEST, PermissionScope.ALL]
+  //   );
+
+  // }
+
   async requestLoan(
     sub: string,
     input: RequestLoanDto,
