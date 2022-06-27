@@ -38,6 +38,9 @@ export class TransactionReference extends BaseEntity {
 
   @prop({ enum: PaymentMethod, default: PaymentMethod.ONLINE })
   paymentMethod: PaymentMethod;
+
+  @prop()
+  bankTransferProof: string;
 }
 
 export default getModelForClass(TransactionReference);

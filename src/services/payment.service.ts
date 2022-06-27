@@ -1,13 +1,6 @@
-import {
-  TransactionReason,
-  PaystackChargeStatus,
-  PermissionScope,
-} from "../valueObjects";
+import { TransactionReason, PaystackChargeStatus, PermissionScope } from "../valueObjects";
 import PaystackService from "./paystack.service";
-import {
-  IPaystackInitTransactionResponse,
-  IPaystackChargeResponse,
-} from "../interfaces/ros";
+import { IPaystackInitTransactionResponse, IPaystackChargeResponse } from "../interfaces/ros";
 import TransactionReferenceService from "./transactionReference.service";
 import { createError, getUpdateOptions, validateFields } from "../utils";
 import { AddPaymentItemDto } from "../interfaces/dtos";
@@ -16,11 +9,15 @@ import {
   PaymentItem,
   AvailableResource,
   AvailableRole,
+  PaymentMethod,
+  TransactionReference,
+  transactionReference,
 } from "../entities";
 import RoleService from "./role.service";
 import OnboardingService from "./onboarding.service";
 import FinanceService from "./finance.service";
 import LoanService from "./loan.service";
+import AccountService from "./account.service";
 
 export default class PaymentService {
   public async initTransaction(
@@ -31,9 +28,11 @@ export default class PaymentService {
       itemId: string;
       reason: TransactionReason;
       inline?: boolean;
+      receipt?: string;
       callbackUrl?: string;
+      method?: PaymentMethod;
     }
-  ): Promise<IPaystackInitTransactionResponse> {
+  ): Promise<IPaystackInitTransactionResponse | TransactionReference> {
     if (!body.reason) throw createError("Transaction reason is required", 400);
     // const role = UserRole.PATIENT;
     console.log(">>> Initialising payment: ", body);
@@ -48,60 +47,50 @@ export default class PaymentService {
         break;
       case TransactionReason.LOAN_PAYMENT:
         if (!body.itemId) throw createError("itemId is required", 400);
-        await LoanService.checkLoanBeforePaymentUpdate(
-          body.itemId,
-          body.amount
-        );
+        await LoanService.checkLoanBeforePaymentUpdate(body.itemId, body.amount);
         break;
       case TransactionReason.AUTO_PAYBACK:
         if (!body.itemId) throw createError("itemId is required", 400);
-        await FinanceService.checkFianceBeforePaymentUpdate(
-          body.itemId,
-          body.amount
-        );
+        await FinanceService.checkFianceBeforePaymentUpdate(body.itemId, body.amount);
         break;
     }
 
-    return await new PaystackService().initializeTransaction(
-      accountId,
-      amount,
-      itemId,
-      roles,
-      body.reason,
-      body.callbackUrl
-    );
+    if (body?.method && body?.method === PaymentMethod.TRANSFER) {
+      if (!body?.receipt) throw createError("receipt is required", 400);
+      return await PaymentService.initializeBankTransferTransaction(
+        accountId,
+        amount,
+        itemId,
+        roles,
+        body.reason,
+        body.method,
+        body?.receipt
+      );
+    }
+
+    return await new PaystackService().initializeTransaction(accountId, amount, itemId, roles, body.reason, body.callbackUrl);
   }
 
-  public async checkStatus(
-    reference: string
-  ): Promise<IPaystackChargeResponse> {
+  public async checkStatus(reference: string): Promise<IPaystackChargeResponse> {
     if (!reference) throw createError("Reference is required", 400);
     return await new PaystackService().chargeCheckPending(reference);
   }
 
-  public async addPaymentItem(
-    input: AddPaymentItemDto,
-    roles: string[],
-    dryRun: boolean = false
-  ): Promise<PaymentItem> {
+  public async addPaymentItem(input: AddPaymentItemDto, roles: string[], dryRun: boolean = false): Promise<PaymentItem> {
     validateFields(input, ["amount", "for"]);
-    if (!Object.values(TransactionReason).includes(input.for))
-      throw createError("Invalid 'for' value", 400);
+    if (!Object.values(TransactionReason).includes(input.for)) throw createError("Invalid 'for' value", 400);
 
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.PAYMENT_ITEM,
-      [PermissionScope.CREATE, PermissionScope.ALL]
-    );
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.PAYMENT_ITEM, [
+      PermissionScope.CREATE,
+      PermissionScope.ALL,
+    ]);
 
     const _payItem = await paymentItem
       .findOneAndUpdate({ for: input.for }, { ...input }, getUpdateOptions())
       .lean<PaymentItem>()
       .exec();
 
-    if (!dryRun && !_payItem)
-      throw createError("Unable to add payment item", 400);
+    if (!dryRun && !_payItem) throw createError("Unable to add payment item", 400);
     return _payItem;
   }
 
@@ -112,12 +101,10 @@ export default class PaymentService {
     dryRun: boolean = false
   ): Promise<PaymentItem> {
     validateFields(input, ["amount", "for"]);
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.PAYMENT_ITEM,
-      [PermissionScope.CREATE, PermissionScope.ALL]
-    );
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.PAYMENT_ITEM, [
+      PermissionScope.CREATE,
+      PermissionScope.ALL,
+    ]);
 
     const _payItem = await paymentItem
       .findByIdAndUpdate(id, { ...input }, { new: true })
@@ -137,11 +124,7 @@ export default class PaymentService {
     return await paymentItem.find().lean<PaymentItem[]>().exec();
   }
 
-  public async getPaymentItem(
-    id: string,
-    roles: string[],
-    dryRun = false
-  ): Promise<PaymentItem> {
+  public async getPaymentItem(id: string, roles: string[], dryRun = false): Promise<PaymentItem> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
@@ -154,22 +137,13 @@ export default class PaymentService {
     return _payItem;
   }
 
-  public async deletePaymentItem(
-    id: string,
-    roles: string[],
-    dryRun = false
-  ): Promise<PaymentItem> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN],
-      roles,
-      AvailableResource.PAYMENT_ITEM,
-      [PermissionScope.DELETE, PermissionScope.ALL]
-    );
+  public async deletePaymentItem(id: string, roles: string[], dryRun = false): Promise<PaymentItem> {
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.PAYMENT_ITEM, [
+      PermissionScope.DELETE,
+      PermissionScope.ALL,
+    ]);
 
-    const _payItem = await paymentItem
-      .findByIdAndDelete(id)
-      .lean<PaymentItem>()
-      .exec();
+    const _payItem = await paymentItem.findByIdAndDelete(id).lean<PaymentItem>().exec();
     if (!dryRun && !_payItem) throw createError("Payment item not found", 404);
     return _payItem;
   }
@@ -194,65 +168,36 @@ export default class PaymentService {
   //     }
   // }
 
-  public static async checkTransactionApproved(
-    response: IPaystackChargeResponse
-  ) {
+  public static async checkTransactionApproved(response: IPaystackChargeResponse) {
     const data = response.data;
     console.log("Verifying transaction: ", response);
     const transactionReferenceService = new TransactionReferenceService();
-    const txRef = await transactionReferenceService.getTransactionReference(
-      data.reference
-    );
+    const txRef = await transactionReferenceService.getTransactionReference(data.reference);
     // const amount = transactionReference.amount;
-    if (txRef.used)
-      return console.warn(">>>>>>>Transaction reference already used");
+    if (txRef.used) return console.warn(">>>>>>>Transaction reference already used");
     if (data.status.toLowerCase() === PaystackChargeStatus.SUCCESS) {
       switch (txRef.reason) {
         case TransactionReason.ONBOARDING_PAYMENT:
           await Promise.all([
-            await transactionReferenceService.markReferenceUsed(
-              data.reference,
-              true
-            ),
-
-            await OnboardingService.markOnboardingFeeAsPaid(
-              txRef.account as string,
-              txRef._id as string
-            ),
+            await transactionReferenceService.markReferenceUsed(data.reference, true),
+            await OnboardingService.markOnboardingFeeAsPaid(txRef.account as string, txRef._id as string),
           ]);
           break;
         case TransactionReason.AUTO_DEPOSIT:
           await Promise.all([
-            await transactionReferenceService.markReferenceUsed(
-              data.reference,
-              true
-            ),
-            await FinanceService.markInitialDepositAsPaid(
-              txRef?.itemId,
-              txRef.account as string
-            ),
+            await transactionReferenceService.markReferenceUsed(data.reference, true),
+            await FinanceService.markInitialDepositAsPaid(txRef?.itemId, txRef.account as string),
           ]);
           break;
         case TransactionReason.LOAN_PAYMENT:
           await Promise.all([
-            await transactionReferenceService.markReferenceUsed(
-              data.reference,
-              true
-            ),
-            await LoanService.updatePayback(
-              txRef?.itemId,
-              txRef?.account as string,
-              txRef?.amount,
-              txRef?._id as string
-            ),
+            await transactionReferenceService.markReferenceUsed(data.reference, true),
+            await LoanService.updatePayback(txRef?.itemId, txRef?.account as string, txRef?.amount, txRef?._id as string),
           ]);
           break;
         case TransactionReason.AUTO_PAYBACK:
           await Promise.all([
-            await transactionReferenceService.markReferenceUsed(
-              data.reference,
-              true
-            ),
+            await transactionReferenceService.markReferenceUsed(data.reference, true),
             await FinanceService.updatePayback(
               txRef?.itemId,
               txRef?.account as string,
@@ -264,5 +209,48 @@ export default class PaymentService {
           break;
       }
     }
+  }
+
+  private static async initializeBankTransferTransaction(
+    accountId: string,
+    amount: number,
+    itemId: string,
+    roles: string[],
+    reason: TransactionReason,
+    method: PaymentMethod,
+    proof: string
+  ): Promise<TransactionReference> {
+    // don't update existing tx, create new one instead.
+    const txNew = reason === TransactionReason.LOAN_PAYMENT;
+
+    if (!(await AccountService.checkAccountExists(accountId))) throw createError("Account not found", 403);
+    const reference = await new TransactionReferenceService().addTransactionReference(accountId, amount, roles, reason, itemId, {
+      txNew,
+      method,
+      proof,
+    });
+
+    return reference;
+  }
+
+  public async approveBankTransfer(input: { account: string; reference: string; receipt: string }, roles: string[]) {
+    validateFields(input, ["account", "reference", "receipt"]);
+    const { account, reference, receipt } = input;
+
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.PAYMENT_ITEM, [
+      PermissionScope.APPROVE,
+      PermissionScope.ALL,
+    ]);
+
+    const check = Boolean(await transactionReference.countDocuments({ account, reference, receipt, used: false }).exec());
+    if (!check) throw createError("Transaction does not exist", 404);
+
+    try {
+      await PaymentService.checkTransactionApproved({ data: { reference, status: PaystackChargeStatus.SUCCESS } } as any);
+    } catch (error) {
+      throw createError(error?.message, 400);
+    }
+
+    return { approved: true };
   }
 }

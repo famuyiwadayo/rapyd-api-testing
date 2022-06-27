@@ -12,10 +12,11 @@ export default function <T>(input: T, requiredFields: (keyof T)[]) {
   });
 
   // console.log("required", fieldsRequired);
-  if (missingFields.length > 0)
+  const len = missingFields.length;
+  if (len > 0)
     throw createError(
-      `${missingFields.join(", ")} fields ${
-        missingFields.length === 1 ? "is" : "are"
+      `${missingFields.join(", ")} field${len < 2 ? "" : "s"} ${
+        len === 1 ? "is" : "are"
       } required`,
       400
     );

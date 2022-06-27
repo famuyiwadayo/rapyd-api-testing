@@ -11,6 +11,7 @@ router.put("/:id/approve", authGuard, controller.approveLoan);
 router.put("/:id/decline", authGuard, controller.declineLoan);
 
 router.get("/", authGuard, controller.getLoans);
+router.get("/eligibility", authGuard, controller.checkEligibility);
 router.get("/:id", authGuard, controller.getLoansById);
 
 export default router;

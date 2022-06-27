@@ -67,6 +67,20 @@ export default class AccountController {
     }
   }
 
+  async updateVehicleStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles } = req.user;
+      const result = await service.updateVehicleStatus(
+        req.params.id,
+        req.body,
+        roles
+      );
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async changePassword(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;

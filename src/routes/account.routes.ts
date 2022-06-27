@@ -18,6 +18,7 @@ router.post("/bank", authGuard, controller.addBank); // ✅
 
 // PUT
 router.put("/me", authGuard, controller.updateAccount); // ✅
+router.put("/vehicle/:id/status", authGuard, controller.updateVehicleStatus); // ✅
 router.put("/password", authGuard, controller.changePassword); // ✅
 router.put("/:id/disable", authGuard, controller.disableAccount); // ✅
 router.put("/:id/enable", authGuard, controller.enableAccount); // ✅

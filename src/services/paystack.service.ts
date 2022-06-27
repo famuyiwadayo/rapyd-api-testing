@@ -1,7 +1,4 @@
-import {
-  IPaystackChargeResponse,
-  IPaystackInitTransactionResponse,
-} from "../interfaces/ros";
+import { IPaystackChargeResponse, IPaystackInitTransactionResponse } from "../interfaces/ros";
 import config from "../config";
 import { account, Account } from "../entities";
 import PaymentService from "./payment.service";
@@ -22,50 +19,32 @@ export default class PaystackService {
     callbackUrl?: string
   ): Promise<IPaystackInitTransactionResponse> {
     const txNew = reason === TransactionReason.LOAN_PAYMENT; // don't update existing tx, create new one instead.
-    const user: Account = await account
-      .findById(accountId)
-      .lean<Account>()
-      .exec();
+    const user: Account = await account.findById(accountId).lean<Account>().exec();
     const reference = (
-      await new TransactionReferenceService().addTransactionReference(
-        accountId,
-        amount,
-        roles,
-        reason,
-        itemId,
-        txNew
-      )
+      await new TransactionReferenceService().addTransactionReference(accountId, amount, roles, reason, itemId, { txNew })
     ).reference;
     callbackUrl = callbackUrl || config.paystackCallbackUrl;
-    return request(
-      PaystackService.createUrl(PaystackRoute.INITIALIZE_TRANSACTION),
-      {
-        body: {
-          email: user.email,
-          reference: reference,
-          amount: amount * 100,
-          callback_url: callbackUrl,
-        },
-        method: "POST",
-        json: true,
-        headers: PaystackService.getHeaders(),
-      }
-    ).catch((err) => {
+    return request(PaystackService.createUrl(PaystackRoute.INITIALIZE_TRANSACTION), {
+      body: {
+        email: user.email,
+        reference: reference,
+        amount: amount * 100,
+        callback_url: callbackUrl,
+      },
+      method: "POST",
+      json: true,
+      headers: PaystackService.getHeaders(),
+    }).catch((err) => {
       throw PaystackService.handleError(err);
     });
   }
 
-  public async chargeCheckPending(
-    reference: string
-  ): Promise<IPaystackChargeResponse> {
-    const result: IPaystackChargeResponse = await request(
-      PaystackService.createUrl(PaystackRoute.CHARGE, reference),
-      {
-        method: "GET",
-        json: true,
-        headers: PaystackService.getHeaders(),
-      }
-    ).catch((err) => {
+  public async chargeCheckPending(reference: string): Promise<IPaystackChargeResponse> {
+    const result: IPaystackChargeResponse = await request(PaystackService.createUrl(PaystackRoute.CHARGE, reference), {
+      method: "GET",
+      json: true,
+      headers: PaystackService.getHeaders(),
+    }).catch((err) => {
       throw PaystackService.handleError(err);
     });
     await PaymentService.checkTransactionApproved(result);
@@ -102,8 +81,7 @@ export default class PaystackService {
     const error = err.error;
     console.error("**** Original Paystack Error message: ", err.message);
     if (!error) throw createError("Payment failed", 500);
-    if (!error.data)
-      throw createError(error.message ? error.message : "Payment failed", 400);
+    if (!error.data) throw createError(error.message ? error.message : "Payment failed", 400);
     const data = error.data;
     throw createError(data.message, 400);
   }

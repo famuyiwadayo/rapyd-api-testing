@@ -3,30 +3,18 @@ import { generate } from "voucher-code-generator";
 import RoleService from "./role.service";
 import { PaginatedDocument, IPaginationFilter } from "../interfaces/ros";
 import { PermissionScope, TransactionReason } from "../valueObjects";
-import {
-  createError,
-  getUpdateOptions,
-  paginate,
-  stripUpdateFields,
-} from "../utils";
-import {
-  AvailableResource,
-  AvailableRole,
-  transactionReference,
-  TransactionReference,
-} from "../entities";
+import { createError, getUpdateOptions, paginate, stripUpdateFields } from "../utils";
+import { AvailableResource, AvailableRole, PaymentMethod, transactionReference, TransactionReference } from "../entities";
 
 export default class TransactionReferenceService {
   public async getTransactionReferences(
     roles: string[],
     filters: IPaginationFilter & { paid?: boolean; reason?: TransactionReason }
   ): Promise<PaginatedDocument<TransactionReference[]>> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
-      roles,
-      AvailableResource.HISTORY,
-      [PermissionScope.READ, PermissionScope.ALL]
-    );
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.HISTORY, [
+      PermissionScope.READ,
+      PermissionScope.ALL,
+    ]);
 
     const reasons = String(filters?.reason ?? "").split(",");
 
@@ -53,14 +41,17 @@ export default class TransactionReferenceService {
     roles: string[],
     reason: TransactionReason,
     itemId?: string,
-    saveCard = false,
-    reference?: string,
-    txNew = false
+    options?: {
+      txNew?: boolean;
+      method?: PaymentMethod;
+      proof?: string;
+      saveCard?: boolean;
+      reference?: string;
+    }
   ): Promise<TransactionReference> {
-    reference =
-      reference ?? TransactionReferenceService.generateReferenceNumber();
+    const reference = options?.reference ?? TransactionReferenceService.generateReferenceNumber();
 
-    if (txNew)
+    if (options?.txNew)
       return await transactionReference.create({
         amount,
         account: accountId,
@@ -68,8 +59,10 @@ export default class TransactionReferenceService {
         roles,
         reason,
         reference,
-        saveCard,
+        saveCard: options?.saveCard ?? false,
         used: false,
+        paymentMethod: options?.method ?? PaymentMethod.ONLINE,
+        bankTransferProof: options?.proof,
       });
 
     return await transactionReference
@@ -82,7 +75,9 @@ export default class TransactionReferenceService {
           roles,
           reason,
           reference,
-          saveCard,
+          saveCard: options?.saveCard ?? false,
+          paymentMethod: options?.method ?? PaymentMethod.ONLINE,
+          bankTransferProof: options?.proof,
           used: false,
         },
         getUpdateOptions()
@@ -91,15 +86,9 @@ export default class TransactionReferenceService {
       .exec();
   }
 
-  public async updateTransactionReference(
-    reference: string,
-    body: TransactionReference
-  ): Promise<TransactionReference> {
+  public async updateTransactionReference(reference: string, body: TransactionReference): Promise<TransactionReference> {
     stripUpdateFields(body);
-    return await transactionReference
-      .findOneAndUpdate({ reference }, body)
-      .lean<TransactionReference>()
-      .exec();
+    return await transactionReference.findOneAndUpdate({ reference }, body).lean<TransactionReference>().exec();
   }
 
   public async getTransactionReference(
@@ -109,28 +98,18 @@ export default class TransactionReferenceService {
     authenticate = false
   ): Promise<TransactionReference> {
     if (roles && authenticate)
-      await RoleService.requiresPermission(
-        [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
-        roles,
-        AvailableResource.HISTORY,
-        [PermissionScope.READ, PermissionScope.ALL]
-      );
+      await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.HISTORY, [
+        PermissionScope.READ,
+        PermissionScope.ALL,
+      ]);
 
-    let txRef = transactionReference
-      .findOne({ reference })
-      .populate("account")
-      .lean<TransactionReference>()
-      .exec();
+    let txRef = transactionReference.findOne({ reference }).populate("account").lean<TransactionReference>().exec();
 
-    if (!txRef && validate)
-      throw createError(`Transaction reference not found`, 400);
+    if (!txRef && validate) throw createError(`Transaction reference not found`, 400);
     return txRef;
   }
 
-  public async markReferenceUsed(
-    reference: string,
-    used: boolean
-  ): Promise<TransactionReference> {
+  public async markReferenceUsed(reference: string, used: boolean): Promise<TransactionReference> {
     await transactionReference.findOneAndUpdate({ reference }, { used }).exec();
     console.log(">>>>Marking reference used");
     return await this.getTransactionReference(reference);

@@ -5,6 +5,16 @@ import { sendError, sendResponse } from "../utils";
 const service = new LoanService();
 
 export default class LoanController {
+  async checkEligibility(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user } = req;
+      const data = await service.checkEligibility(user.sub, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async requestLoan(req: Request, res: Response, next: NextFunction) {
     try {
       const { body, user } = req;

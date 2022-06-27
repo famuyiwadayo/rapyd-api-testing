@@ -9,7 +9,12 @@ import {
 } from "../interfaces/dtos";
 import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
 import { account, Account } from "../entities";
-import { createError, paginate, removeForcedInputs } from "../utils";
+import {
+  createError,
+  paginate,
+  removeForcedInputs,
+  validateFields,
+} from "../utils";
 import {
   PasswordService,
   RoleService,
@@ -23,6 +28,8 @@ import { AvailableResource } from "../entities/rolePermission";
 import difference from "lodash/difference";
 import isEmpty from "lodash/isEmpty";
 import { nanoid } from "nanoid";
+import { VehicleStatus } from "../entities/account";
+import { pick } from "lodash";
 
 export default class AccountService {
   private passwordService = new PasswordService();
@@ -86,6 +93,7 @@ export default class AccountService {
     filters: IPaginationFilter & {
       role?: AvailableRole;
       vehicleId?: string;
+      approved?: boolean;
     } = {
       limit: "10",
       page: "1",
@@ -113,6 +121,10 @@ export default class AccountService {
       queries = { $and: [...(queries?.$and ?? [])] };
       queries.$and.push({ "vehicleInfo.vehicle": filters.vehicleId });
     }
+    if (filters?.approved) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries.$and.push({ isApproved: filters?.approved });
+    }
 
     // console.log(JSON.stringify(queries));
     return await paginate("account", queries, filters);
@@ -139,6 +151,37 @@ export default class AccountService {
       .exec()) as Account;
     if (!acc) throw createError("Account not found", 404);
     return acc;
+  }
+
+  async updateVehicleStatus(
+    accountId: string,
+    input: { status: VehicleStatus },
+    roles: string[]
+  ) {
+    input = pick(input, ["status"]);
+    validateFields(input, ["status"]);
+
+    if (!Object.values(VehicleStatus).includes(input.status))
+      throw createError("Vehicle status not supported", 400);
+
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
+
+    const acc = await account.findById(accountId).lean<Account>().exec();
+    if (!acc) throw createError("Account not found", 404);
+
+    return await account
+      .updateOne(
+        { _id: acc._id },
+        { vehicleInfo: { ...acc.vehicleInfo, vehicleStatus: input.status } },
+        { new: true }
+      )
+      .lean<Account>()
+      .exec();
   }
 
   static async removeDeprecatedAccountRoles(
@@ -365,6 +408,8 @@ export default class AccountService {
       "roles",
       "primaryRole",
       "refCode",
+      "vehicleInfo",
+      "bankDetails",
     ]);
   }
 }

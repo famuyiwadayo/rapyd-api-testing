@@ -15,6 +15,16 @@ export default class PaymentController {
     }
   }
 
+  async approveBankTransfer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, body } = req;
+      const data = await service.approveBankTransfer(body, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async checkStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.checkStatus(req.params.ref);
@@ -37,11 +47,7 @@ export default class PaymentController {
   async updatePaymentItem(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
-      const data = await service.updatePaymentItem(
-        req.params.itemId,
-        req.body,
-        roles
-      );
+      const data = await service.updatePaymentItem(req.params.itemId, req.body, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
