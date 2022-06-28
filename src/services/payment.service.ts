@@ -12,6 +12,7 @@ import {
   PaymentMethod,
   TransactionReference,
   transactionReference,
+  PaymentItemFor,
 } from "../entities";
 import RoleService from "./role.service";
 import OnboardingService from "./onboarding.service";
@@ -77,8 +78,14 @@ export default class PaymentService {
   }
 
   public async addPaymentItem(input: AddPaymentItemDto, roles: string[], dryRun: boolean = false): Promise<PaymentItem> {
-    validateFields(input, ["amount", "for"]);
-    if (!Object.values(TransactionReason).includes(input.for)) throw createError("Invalid 'for' value", 400);
+    if (!input?.for) throw createError("for is required", 400);
+
+    if (input.for === PaymentItemFor.ONBOARDING_PAYMENT) validateFields(input, ["amount", "for"]);
+    if (input.for === PaymentItemFor.BANK_TRANSFER) validateFields(input, ["bankName", "accountName", "accountNumber"]);
+
+    const supportedValues = Object.values(PaymentItemFor);
+    if (!supportedValues.includes(input.for))
+      throw createError(`'${input.for}' is not supported, supported values are ${supportedValues.join(", ")}`, 400);
 
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.PAYMENT_ITEM, [
       PermissionScope.CREATE,
