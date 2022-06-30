@@ -1,0 +1,60 @@
+name: Trigger auto deployment for rapyd-container-app
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/rapyd-container-app-AutoDeployTrigger-ed5976fb-8e32-4332-bc6d-fce75eb079c2.yml'
+
+  # Allow mannually trigger 
+  workflow_dispatch:      
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to container registry
+        uses: docker/login-action@v1
+        with:
+          registry: rapyd.azurecr.io
+          username: ${{ secrets.RAPYDCONTAINERAPP_REGISTRY_USERNAME }}
+          password: ${{ secrets.RAPYDCONTAINERAPP_REGISTRY_PASSWORD }}
+
+      - name: Build and push container image to registry
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: rapyd.azurecr.io/rapyd-container-app:${{ github.sha }}
+          file: ./Dockerfile
+          context: ./
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.RAPYDCONTAINERAPP_AZURE_CREDENTIALS }}
+
+
+      - name: Deploy to containerapp
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az config set extension.use_dynamic_install=yes_without_prompt
+            az containerapp registry set -n rapyd-container-app -g container-registry-resource-group --server rapyd.azurecr.io --username  ${{ secrets.RAPYDCONTAINERAPP_REGISTRY_USERNAME }} --password ${{ secrets.RAPYDCONTAINERAPP_REGISTRY_PASSWORD }}
+            az containerapp update -n rapyd-container-app -g container-registry-resource-group --image rapyd.azurecr.io/rapyd-container-app:${{ github.sha }}
