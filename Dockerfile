@@ -43,10 +43,11 @@ WORKDIR /usr/src/app
 COPY package.json ./
 COPY tsconfig.json ./
 
-# COPY .env ./
-# RUN yarn install
+# enabled next line if you want the .env to be built with the images
+# note that when doing a CI/CD with githib, the command will fail.
+# COPY .env ./ 
+
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-COPY src/emails ./dist/src
 EXPOSE 8080
 CMD yarn start
