@@ -34,8 +34,8 @@ export default class AuthVerificationService {
     // send reset email here
     // /reset?token={{token}}&sub={{accountId}}
     await EmailService.sendEmail("🥹 Reset password", acc?.email, Template.RESET_PASSWORD, {
-      link: `https://rapydcars.com/reset?token=${verification?.token}&sub=${accountId}`,
       name: `${acc?.firstName}`,
+      link: `https://rapydcars.com/password-reset?token=${verification?.token}&sub=${accountId}`,
     });
     console.log("RESET TOKEN", `?token=${verification?.token}&sub=${accountId}`);
 
@@ -66,6 +66,7 @@ export default class AuthVerificationService {
     await EmailService.sendEmail("📧 Verify your email address", acc?.email, Template.VERIFICATION, {
       code: verification?.code,
       name: `${acc?.firstName}`,
+      link: `https://rapydcars.com/verify-email?code=${verification?.code}`,
     });
     console.log("\nEMAIL VERIFICATION CODE", verification?.code);
 
