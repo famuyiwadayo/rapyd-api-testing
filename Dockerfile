@@ -42,7 +42,7 @@ LABEL AUTHOR github.com/famuyiwadayo
 WORKDIR /usr/src/app
 COPY package.json ./
 COPY tsconfig.json ./
-COPY .env ./
+# COPY .env ./
 # RUN yarn install
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
