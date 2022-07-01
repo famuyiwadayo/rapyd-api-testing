@@ -16,8 +16,8 @@ import { createError } from "../utils";
 sgMail.setApiKey(config.SENDGRID_KEY);
 
 export enum Template {
-  VERIFICATION = "/templates/verification.html",
-  RESET_PASSWORD = "/templates/resetPassword.html",
+  VERIFICATION = "/emails/verification.html",
+  RESET_PASSWORD = "/emails/resetPassword.html",
 }
 
 export default class EmailService {
