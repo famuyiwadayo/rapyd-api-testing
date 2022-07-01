@@ -23,14 +23,14 @@ jobs:
       uses: docker/login-action@v1
       with:
         registry: https://rapyd.azurecr.io/
-        username: ${{ secrets.AzureAppService_ContainerUsername_6d67c79b577c4c79af04f6a31d99129d }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_dc3c309a1c604411b7f51cdb12b6ce3f }}
+        username: ${{ secrets.AzureAppService_ContainerUsername_ff027bfc3da9422a9bec26cdb951ef3d }}
+        password: ${{ secrets.AzureAppService_ContainerPassword_3bccef0f245c403792478c1c1d69c4b2 }}
 
     - name: Build and push container image to registry
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: rapyd.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_6d67c79b577c4c79af04f6a31d99129d }}/rapyd-api:${{ github.sha }}
+        tags: rapyd.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_ff027bfc3da9422a9bec26cdb951ef3d }}/rapyd-api:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'rapyd-api'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_202674ba98374bd5aa84fca514532f01 }}
-        images: 'rapyd.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_6d67c79b577c4c79af04f6a31d99129d }}/rapyd-api:${{ github.sha }}'
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_5779480743aa476889f32ead42955850 }}
+        images: 'rapyd.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_ff027bfc3da9422a9bec26cdb951ef3d }}/rapyd-api:${{ github.sha }}'
