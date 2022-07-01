@@ -1,7 +1,7 @@
 export { default as VehicleService } from "./vehicle.service";
 export { default as AuthService } from "./auth.service";
 export { default as RoleService } from "./role.service";
-export { default as EmailService } from "./email.service";
+export { default as EmailService, Template } from "./email.service";
 export { default as SystemService } from "./system.service";
 export { default as AccessService } from "./access.service";
 export { default as FinanceService } from "./finance.service";

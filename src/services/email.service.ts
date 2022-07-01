@@ -1,26 +1,23 @@
-import {
-  ContactsApi,
-  ContactsApiApiKeys,
-  CreateContact,
-} from "sib-api-v3-typescript";
+import { ContactsApi, ContactsApiApiKeys, CreateContact } from "sib-api-v3-typescript";
 
-import { MailService } from "@sendgrid/mail";
+import sgMail from "@sendgrid/mail";
 
 import * as fs from "fs";
 import * as path from "path";
 import * as hbs from "handlebars";
 
 import config from "../config";
+import { createError } from "../utils";
 
 // Configure API key authorization: api-key
 const apiInstance = new ContactsApi();
 apiInstance.setApiKey(ContactsApiApiKeys.apiKey, config.SEND_IN_BLUE_KEY);
 
-const client = new MailService();
-client.setApiKey(config.SENDGRID_KEY);
+sgMail.setApiKey(config.SENDGRID_KEY);
 
-enum Template {
+export enum Template {
   VERIFICATION = "/templates/verification.html",
+  RESET_PASSWORD = "/templates/resetPassword.html",
 }
 
 export default class EmailService {
@@ -40,27 +37,27 @@ export default class EmailService {
     return res;
   }
 
-  static async sendEmail(
-    subject: string,
-    email: string,
-    _template: Template,
-    data: any
-  ) {
-    const html = fs
-      .readFileSync(path.join(__dirname, "..", _template.toString()))
-      .toString();
+  static async sendEmail(subject: string, email: string, _template: Template, data: any) {
+    const html = fs.readFileSync(path.join(__dirname, "..", _template.toString())).toString();
+
+    // console.log("sendEmail", config.SENDGRID_KEY, email);
 
     const template = hbs.compile(html),
       htmlToSend = template(data);
 
-    await client.send({
-      from: {
-        name: "Rapyd",
-        email: "rapyd@gmail.com",
-      },
-      subject,
-      to: email,
-      html: htmlToSend,
-    });
+    try {
+      await sgMail.send({
+        from: {
+          name: "Rapyd",
+          email: "rapydcarsltd@gmail.com",
+        },
+        subject,
+        to: email,
+        html: htmlToSend,
+      });
+    } catch (error) {
+      console.log(error);
+      throw createError(error.message, 500);
+    }
   }
 }

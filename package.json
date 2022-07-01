@@ -10,13 +10,12 @@
     "serve": "nodemon app.ts",
     "test:unit": "ENV_FILE=.env.test jest",
     "build": "rimraf dist && tsc",
-    "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node dist/app.js",
     "container:deploy": "chmod +x ./deploy.sh && ./deploy.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@sendgrid/mail": "^7.6.2",
+    "@sendgrid/mail": "^7.7.0",
     "@typegoose/typegoose": "^9.8.0",
     "axios": "^0.26.1",
     "bcryptjs": "^2.4.3",

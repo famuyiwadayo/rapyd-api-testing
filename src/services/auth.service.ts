@@ -2,12 +2,7 @@
 
 import { sign, verify } from "jsonwebtoken";
 import { createError, getUpdateOptions, setExpiration } from "../utils";
-import {
-  loginDto,
-  registerDto,
-  ResetPasswordDto,
-  ChangePasswordDto,
-} from "../interfaces/dtos";
+import { loginDto, registerDto, ResetPasswordDto, ChangePasswordDto } from "../interfaces/dtos";
 import { AuthPayload, Auth } from "../interfaces/ros";
 import { authToken, authVerification, Account, account } from "../entities";
 import {
@@ -27,39 +22,27 @@ export default class AuthService {
   async login(data: loginDto, deviceId: string): Promise<Auth> {
     // validateFields(data);
     console.log("DEVICE ID", deviceId);
-    const acc = await this.accountService.findByLogin(
-      data.email,
-      data.password
-    );
+    const acc = await this.accountService.findByLogin(data.email, data.password);
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
     return { payload, token };
   }
 
-  async register(
-    data: registerDto,
-    deviceId: string,
-    roles?: string[]
-  ): Promise<Auth> {
+  async register(data: registerDto, deviceId: string, roles?: string[]): Promise<Auth> {
     // validateFields(data);
 
-    if (await this.accountService.checkEmailExists(data.email))
-      throw createError("Email already exist", 400);
+    if (await this.accountService.checkEmailExists(data.email)) throw createError("Email already exist", 400);
     const acc = await this.accountService.createAccount(data, roles);
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
+    await this.requestEmailVerification(acc?._id);
     return { payload, token };
   }
 
-  async registerWithRole(
-    data: registerDto,
-    role: AvailableRole,
-    deviceId: string
-  ): Promise<Auth | null> {
-    if (await this.accountService.checkEmailExists(data.email))
-      throw createError("Email already exist", 400);
+  async registerWithRole(data: registerDto, role: AvailableRole, deviceId: string): Promise<Auth | null> {
+    if (await this.accountService.checkEmailExists(data.email)) throw createError("Email already exist", 400);
 
     const _role = await RoleService.getRoleBySlug(role);
     const acc = await this.accountService.createAccount(data, [_role?._id]);
@@ -70,50 +53,30 @@ export default class AuthService {
     payload.exp = expiration;
 
     console.log(`Registered new user with refCode ${data?.refCode}`);
+    await this.requestEmailVerification(acc?._id);
     return { payload, token };
   }
 
-  public async requestEmailVerification(
-    accountId: string
-  ): Promise<{ message: string }> {
-    await new AuthVerificationService().requestEmailVerification(
-      accountId,
-      AuthVerificationReason.ACCOUNT_VERIFICATION
-    );
+  public async requestEmailVerification(accountId: string): Promise<{ message: string }> {
+    await new AuthVerificationService().requestEmailVerification(accountId, AuthVerificationReason.ACCOUNT_VERIFICATION);
     return { message: "Verification code sent" };
   }
 
-  async verifyEmail(
-    accountId: string,
-    code: string,
-    roles: string[],
-    deviceId: string
-  ): Promise<Auth> {
-    const acc = await this.accountService.verifyEmail(
-      { accountId, code },
-      roles
-    );
+  async verifyEmail(accountId: string, code: string, roles: string[], deviceId: string): Promise<Auth> {
+    const acc = await this.accountService.verifyEmail({ accountId, code }, roles);
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
     return { payload, token };
   }
 
-  async validateAuthCode(
-    token: string,
-    deviceId: string
-  ): Promise<AuthPayload> {
-    const auth = await authToken
-      .findOne({ token, deviceId })
-      .select("token")
-      .lean()
-      .exec();
+  async validateAuthCode(token: string, deviceId: string): Promise<AuthPayload> {
+    const auth = await authToken.findOne({ token, deviceId }).select("token").lean().exec();
     if (!auth) throw createError("Authorization code is invalid", 401);
     const payload: AuthPayload = verify(auth.token, config.JWT_SECRET, {
       audience: config.JWT_AUDIENCE,
     }) as AuthPayload;
-    if (Date.now() > (payload.exp as number))
-      throw createError("Token expired", 401);
+    if (Date.now() > (payload.exp as number)) throw createError("Token expired", 401);
     return payload;
   }
 
@@ -121,7 +84,7 @@ export default class AuthService {
     const acc = await account.findOne({ email }).select("_id").lean().exec();
     if (!acc) throw createError("Account not found", 404);
     await new AuthVerificationService().requestResetPassword(acc._id);
-    return { message: "Reset link sent to your email" };
+    return { message: "Reset link has been sent to your email" };
   }
 
   async resetPassword(input: ResetPasswordDto) {
@@ -131,19 +94,10 @@ export default class AuthService {
   }
 
   static async invalidateAuthCode(accountId: string): Promise<boolean> {
-    return Boolean(
-      await authToken
-        .findOneAndUpdate({ accountId }, { token: "", exp: 0 })
-        .select("_id")
-        .lean()
-        .exec()
-    );
+    return Boolean(await authToken.findOneAndUpdate({ accountId }, { token: "", exp: 0 }).select("_id").lean().exec());
   }
 
-  private async addToken(
-    payload: AuthPayload,
-    deviceId: string
-  ): Promise<{ token: string; expiration: number }> {
+  private async addToken(payload: AuthPayload, deviceId: string): Promise<{ token: string; expiration: number }> {
     const jwt = AuthService.generateToken(payload);
     await authToken
       .findOneAndUpdate(

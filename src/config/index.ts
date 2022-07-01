@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 const config = {
-  PORT: process.env.PORT || 3030,
+  PORT: process.env.PORT || 8080,
   NAME: process.env.NAME as string,
   VERSION: process.env.VERSION as string,
   DB_URI: process.env.DATABASE_URL as string,

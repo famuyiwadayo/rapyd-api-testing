@@ -13,7 +13,7 @@ import ServicingRouter from "./servicing.routes";
 import LoanRouter from "./loan.routes";
 import GuarantorRouter from "./guarantor.routes";
 import TransactionRouter from "./transactions.routes";
-// import EmailRouter from "./email.routes";
+import EmailRouter from "./email.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
 import { sendResponse } from "../utils";
@@ -36,6 +36,8 @@ routes.use("/services", ServicingRouter);
 routes.use("/guarantors", GuarantorRouter);
 routes.use("/transactions", TransactionRouter);
 
+routes.use("/emails", EmailRouter);
+
 // routes.use("/registrations", RegistrationRequestRouter);
 
 routes.get("/healthcheck", (_, res, __) => {
@@ -44,10 +46,7 @@ routes.get("/healthcheck", (_, res, __) => {
 
 routes.post("/webhook", async (req, res, _) => {
   //validate event
-  const hash = crypto
-    .createHmac("sha512", config.PAYSTACK_AUTHORIZATION)
-    .update(JSON.stringify(req.body))
-    .digest("hex");
+  const hash = crypto.createHmac("sha512", config.PAYSTACK_AUTHORIZATION).update(JSON.stringify(req.body)).digest("hex");
   if (hash == req.headers["x-paystack-signature"]) {
     // console.log(req.body);
     await PaymentService.checkTransactionApproved(req.body);
