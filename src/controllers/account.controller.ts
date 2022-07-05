@@ -14,6 +14,30 @@ export default class AccountController {
     }
   }
 
+  async getActiveVehicleAnalysis(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user } = req;
+      const result = await service.getActiveVehicleAnalysis(user.roles);
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getVehicleStatusAnalysis(req: Request, res: Response, next: NextFunction) {
+    try {
+      const {
+        user,
+        query: { date },
+      } = req;
+
+      const result = await service.getVehicleStatusAnalysis(user.roles, { date: date as any });
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async addBank(req: Request, res: Response, next: NextFunction) {
     try {
       const { body, user } = req;
@@ -27,10 +51,7 @@ export default class AccountController {
   async getAccounts(req: Request, res: Response, next: NextFunction) {
     try {
       // console.log("account", req.query);
-      const result = await service.getAccounts(
-        req.user.roles,
-        req?.query as any
-      );
+      const result = await service.getAccounts(req.user.roles, req?.query as any);
       sendResponse(res, 200, result);
     } catch (error) {
       sendError(error, next);
@@ -70,11 +91,7 @@ export default class AccountController {
   async updateVehicleStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
-      const result = await service.updateVehicleStatus(
-        req.params.id,
-        req.body,
-        roles
-      );
+      const result = await service.updateVehicleStatus(req.params.id, req.body, roles);
       sendResponse(res, 200, result);
     } catch (error) {
       sendError(error, next);
@@ -132,11 +149,7 @@ export default class AccountController {
 
   async updatePrimaryRole(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await service.updatePrimaryRole(
-        req.params.id,
-        req.body.role,
-        req.user.roles
-      );
+      const result = await service.updatePrimaryRole(req.params.id, req.body.role, req.user.roles);
       sendResponse(res, 200, result);
     } catch (error) {
       sendError(error, next);

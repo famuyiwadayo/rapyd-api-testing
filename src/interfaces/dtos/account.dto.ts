@@ -1,6 +1,7 @@
 import { Gender } from "../../valueObjects";
 import { registerDto } from ".";
 import { AccountBankDetails } from "../../entities";
+import { DriverStatus } from "../../entities/account";
 
 export class AccountDto extends registerDto {}
 
@@ -11,6 +12,7 @@ export class UpdateAccountDto {
   lastName?: string;
   avatar?: string;
   gender?: Gender;
+  status?: DriverStatus;
 }
 
 export class VerifyEmailDto {

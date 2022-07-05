@@ -226,7 +226,8 @@ export default class OnboardingService {
 
     if (!payItem) throw createError("Onboarding payment item not found, kindly contact the admin", 404);
 
-    const initiatePayment = async () => await OnboardingService.initiateApplicationPayment(input, roles, payItem?._id!, accountId);
+    const initiatePayment = async () =>
+      await OnboardingService.initiateApplicationPayment({ ...input, method: PaymentMethod.ONLINE }, roles, payItem?._id!, accountId);
 
     if (application?.payment) {
       if (!application.payment?.paid && !application.payment?.txRef) {
@@ -261,6 +262,8 @@ export default class OnboardingService {
     let paymentRef: string = "";
     if (input?.method === PaymentMethod.ONLINE) paymentRef = (tx as IPaystackInitTransactionResponse)?.data?.reference;
     if (input?.method === PaymentMethod.TRANSFER) paymentRef = (tx as TransactionReference)?.reference;
+
+    console.log("TRANSACTION", paymentRef);
 
     await OnboardingService.createOrUpdateData("payment", accountId, {
       paymentRef,

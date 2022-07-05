@@ -5,6 +5,26 @@ import { sendError, sendResponse } from "../utils";
 const service = new VehicleService();
 
 export default class VehicleController {
+  async getAvailableVehicleMakes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles } = req.user;
+      const data = await service.getAvailableVehicleMakes(roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getAvailableVehicleMakeModels(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, params } = req;
+      const data = await service.getAvailableVehicleMakeModel(params.make, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getVehicleById(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
@@ -118,11 +138,7 @@ export default class VehicleController {
   async updateVehicleColor(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
-      const data = await service.updateVehicleColor(
-        req.params.slug,
-        req.body,
-        roles
-      );
+      const data = await service.updateVehicleColor(req.params.slug, req.body, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -132,11 +148,7 @@ export default class VehicleController {
   async updateVehicleType(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
-      const data = await service.updateVehicleType(
-        req.params.slug,
-        req.body,
-        roles
-      );
+      const data = await service.updateVehicleType(req.params.slug, req.body, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -146,11 +158,7 @@ export default class VehicleController {
   async updateVehicleFeature(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles } = req.user;
-      const data = await service.updateVehicleFeature(
-        req.params.slug,
-        req.body,
-        roles
-      );
+      const data = await service.updateVehicleFeature(req.params.slug, req.body, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);

@@ -19,6 +19,8 @@ router.get("/", authGuard, controller.getVehicles);
 router.get("/colors", authGuard, controller.getVehicleColors);
 router.get("/types", authGuard, controller.getVehicleType);
 router.get("/features", authGuard, controller.getVehicleFeatures);
+router.get("/makes", authGuard, controller.getAvailableVehicleMakes);
+router.get("/makes/:make/models", authGuard, controller.getAvailableVehicleMakeModels);
 router.get("/:id", authGuard, controller.getVehicleById);
 router.get("/:id/similar", authGuard, controller.getSimilarVehicles);
 

@@ -1,10 +1,5 @@
 // @ts-nocheck
-import {
-  getModelForClass,
-  modelOptions,
-  prop,
-  Ref,
-} from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Gender } from "../valueObjects";
 import BaseEntity from "./base";
 import { Phone } from "./onboarding";
@@ -18,6 +13,11 @@ export enum VehicleStatus {
   AWAITING_INSURANCE = "awaiting_insurance",
   AWAITING_REGISTRATION = "awaiting_registration",
   ACTIVE = "active",
+}
+
+export enum DriverStatus {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
 }
 export class AccountControl {
   @prop({ default: false })
@@ -44,6 +44,7 @@ export class VehicleDepositInfo {
   @prop({ default: false })
   paid: boolean;
 }
+@modelOptions({ schemaOptions: { timestamps: true } })
 export class AccountVehicleInfo {
   @prop({ ref: () => Vehicle })
   vehicle: Ref<Vehicle>;
@@ -94,6 +95,12 @@ export class Account extends BaseEntity {
 
   @prop()
   primaryRole?: string;
+
+  @prop({ enum: DriverStatus, default: DriverStatus.ACTIVE })
+  status: DriverStatus;
+
+  @prop()
+  lastSeen: Date;
 
   @prop({ allowMixed: "allow" })
   phone?: {
