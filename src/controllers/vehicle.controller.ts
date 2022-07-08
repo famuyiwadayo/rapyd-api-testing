@@ -15,6 +15,19 @@ export default class VehicleController {
     }
   }
 
+  async getTotalVehicleCount(req: Request, res: Response, next: NextFunction) {
+    try {
+      const {
+        user,
+        query: { date },
+      } = req;
+      const data = await service.getTotalVehicleCount(user.roles, { date: date as string });
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAvailableVehicleMakeModels(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, params } = req;

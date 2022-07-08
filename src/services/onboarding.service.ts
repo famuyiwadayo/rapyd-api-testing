@@ -263,7 +263,7 @@ export default class OnboardingService {
     if (input?.method === PaymentMethod.ONLINE) paymentRef = (tx as IPaystackInitTransactionResponse)?.data?.reference;
     if (input?.method === PaymentMethod.TRANSFER) paymentRef = (tx as TransactionReference)?.reference;
 
-    console.log("TRANSACTION", paymentRef);
+    // console.log("TRANSACTION", paymentRef);
 
     await OnboardingService.createOrUpdateData("payment", accountId, {
       paymentRef,

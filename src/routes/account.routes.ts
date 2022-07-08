@@ -10,7 +10,7 @@ const controller = new AccountController();
 router.get("/", authGuard, controller.getAccounts); // ✅
 // router.get("/coins", authGuard, coinController.getCoinsByAccount); // ✅
 router.get("/me", authGuard, controller.getCurrentUserAccount); // ✅
-router.get("/vehicle/analysis", authGuard, controller.getActiveVehicleAnalysis); // ✅
+router.get("/vehicle/analysis", authGuard, controller.getOnlineOfflineVehicleStat); // ✅
 router.get("/vehicle/status", authGuard, controller.getVehicleStatusAnalysis); // ✅
 router.get("/:id", authGuard, controller.accountById); // ✅
 

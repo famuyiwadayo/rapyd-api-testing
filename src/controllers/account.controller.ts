@@ -14,10 +14,10 @@ export default class AccountController {
     }
   }
 
-  async getActiveVehicleAnalysis(req: Request, res: Response, next: NextFunction) {
+  async getOnlineOfflineVehicleStat(req: Request, res: Response, next: NextFunction) {
     try {
       const { user } = req;
-      const result = await service.getActiveVehicleAnalysis(user.roles);
+      const result = await service.getOnlineOfflineVehicleStat(user.roles);
       sendResponse(res, 200, result);
     } catch (error) {
       sendError(error, next);

@@ -29,6 +29,7 @@ import uniq from "lodash/uniq";
 import isEmpty from "lodash/isEmpty";
 import difference from "lodash/difference";
 import { toLower } from "lodash";
+// import { parse } from "date-fns";
 // import { uniqBy } from "lodash";
 
 export default class VehicleService {
@@ -139,6 +140,27 @@ export default class VehicleService {
     return await paginate("vehicle", queries, filters, {
       populate: ["features", "color", "type"],
     });
+  }
+
+  async getTotalVehicleCount(roles: string[], filter?: { date?: string }) {
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
+      PermissionScope.READ,
+      PermissionScope.ALL,
+    ]);
+
+    let dateFilter: any = {};
+    if (filter && filter?.date) {
+      const date = new Date(filter.date);
+      console.log("filter date", date);
+      Object.assign(dateFilter, { createdAt: { $gte: date } });
+    }
+
+    const count = await vehicle
+      .countDocuments({ ...dateFilter })
+      .lean()
+      .exec();
+
+    return { total: count ?? 0 };
   }
 
   async getAvailableVehicleMakes(roles: string[]) {

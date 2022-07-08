@@ -36,7 +36,7 @@ export default class AccountService {
     return acc;
   }
 
-  async getActiveVehicleAnalysis(
+  async getOnlineOfflineVehicleStat(
     roles: string[]
   ): Promise<{ activeVehicles: number; inactiveVehicles: number; onlineVehicles: number; offlineVehicles: number }> {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
@@ -69,14 +69,14 @@ export default class AccountService {
 
     let dateFilter: any = {};
     if (filter && filter?.date) {
-      const date = parse(filter.date);
+      const date = new Date(filter.date);
       Object.assign(dateFilter, { "vehicleInfo.updatedAt": { $gte: date } });
     }
 
     return await account
       .aggregate([
         { $match: { primaryRole: "driver", isApproved: true, ...dateFilter } },
-        // { $group: { _id: "$vehicleInfo.vehicleStatus", count: { $sum: 1 } } },
+        { $group: { _id: "$vehicleInfo.vehicleStatus", count: { $sum: 1 } } },
       ])
       .exec();
   }
