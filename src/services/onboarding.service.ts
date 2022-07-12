@@ -25,6 +25,8 @@ import PaymentService from "./payment.service";
 import config from "../config";
 import VehicleService from "./vehicle.service";
 import GuarantorService from "./guarantor.service";
+import { RapydBus } from "../libs";
+import { OnboardingEventListener } from "../listerners";
 
 type CreateOnboardingDataKeys = keyof Onboarding;
 
@@ -144,7 +146,7 @@ export default class OnboardingService {
       PermissionScope.ALL,
     ]);
 
-    if (!VehicleService.checkVehicleExists(vehicleId)) throw createError("Vehicle not found", 404);
+    if (!(await VehicleService.checkVehicleExists(vehicleId, { isAssigned: false }))) throw createError("Vehicle not found", 404);
 
     const application = await onboarding
       .findOneAndUpdate(
@@ -270,11 +272,13 @@ export default class OnboardingService {
       paid: false,
     });
 
+    await RapydBus.emit("application:payment:initiated", { owner: accountId });
     return tx;
   }
 
   static async markOnboardingFeeAsPaid(accountId: string, refId: string): Promise<Onboarding> {
     const _pay = await OnboardingService.createOrUpdateData("payment", accountId, { txRef: refId, paid: true });
+    await RapydBus.emit("application:payment:confirmed", { owner: accountId, txId: refId });
     return _pay;
   }
 
@@ -304,7 +308,7 @@ export default class OnboardingService {
     return data;
   }
 
-  async approveApplication(id: string, roles: string[]): Promise<Onboarding> {
+  async approveApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
 
     const application = await onboarding
@@ -323,7 +327,7 @@ export default class OnboardingService {
             isApproved: true,
             phone: application?.biodata?.personalInfo?.phone,
             vehicleInfo: {
-              vehicle: application?.vehicleInfo.vehicle,
+              vehicle: application?.vehicleInfo?.vehicle,
               duration: application?.vehicleInfo?.duration,
               deposit: {
                 amount: application?.vehicleInfo?.initialDeposit,
@@ -336,9 +340,17 @@ export default class OnboardingService {
         .lean<Account>()
         .exec(),
 
+      VehicleService.assignVehicle(application?.account as string, application?.vehicleInfo?.vehicle as string),
       GuarantorService.addMultipleGuarantor(application?.account as string, application?.guarantorInfo?.guarantors),
+      RapydBus.emit("application:approved", { owner: application?.account as string, modifier: sub }),
     ]);
 
     return application;
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the OnboardingEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new OnboardingEventListener();
   }
 }

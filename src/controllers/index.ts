@@ -11,6 +11,7 @@ export { default as ServicingController } from "./servicing.controller";
 export { default as LoanController } from "./loan.controller";
 export { default as GuarantorController } from "./guarantor.controller";
 export { default as TransactionController } from "./transactions.controller";
+export { default as NotificationController } from "./notification.controller";
 // export { default as VoteController } from "./vote.controller";
 // export { default as CoinController } from "./coin.controller";
 // export { default as EarningController } from "./earning.controller";

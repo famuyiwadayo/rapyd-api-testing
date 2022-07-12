@@ -1,11 +1,6 @@
 // @ts-nocheck
 
-import {
-  getModelForClass,
-  modelOptions,
-  prop,
-  Ref,
-} from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { PermissionScope } from "../valueObjects";
 import { Resource } from "./resource";
 import BaseEntity from "./base";
@@ -25,6 +20,7 @@ export enum AvailableResource {
   SERVICING = "servicing",
   GUARANTOR = "guarantor",
   LOAN = "loan",
+  NOTIFICATION = "notification",
   HISTORY = "history",
 }
 

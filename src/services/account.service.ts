@@ -17,9 +17,16 @@ import { DriverStatus, VehicleStatus } from "../entities/account";
 import { pick } from "lodash";
 import { parse } from "date-fns";
 
+import RapydBus from "../libs/Rapydbus";
+import { AccountEventListener } from "../listerners";
+
 export default class AccountService {
   private passwordService = new PasswordService();
   private authVerificationService = new AuthVerificationService();
+
+  async testEvent(sub: string, roles: string[]) {
+    await RapydBus.emit("account:tested", { roles, sub });
+  }
 
   async createAccount(input: AccountDto, roles?: string[]): Promise<Account> {
     // validateFields(input);
@@ -33,6 +40,7 @@ export default class AccountService {
     await this.passwordService.addPassword(acc._id!, input.password);
     roles && roles[0] && (await this.updatePrimaryRole(acc._id!, roles[0]));
     acc = (await account.findById(acc._id).lean().exec()) as Account;
+    await RapydBus.emit("account:created", { owner: acc });
     return acc;
   }
 
@@ -90,6 +98,7 @@ export default class AccountService {
     );
 
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 401);
+    await RapydBus.emit("account:bank:added", { owner: sub });
 
     return await account
       .findByIdAndUpdate(sub, { bankDetails: { ...input } }, { new: true })
@@ -106,6 +115,7 @@ export default class AccountService {
     );
 
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 401);
+    await RapydBus.emit("account:bank:removed", { owner: sub });
 
     return await account.findByIdAndUpdate(sub, { bankDetails: null }, { new: true }).lean<Account>().exec();
   }
@@ -163,7 +173,7 @@ export default class AccountService {
     return acc;
   }
 
-  async updateVehicleStatus(accountId: string, input: { status: VehicleStatus }, roles: string[]) {
+  async updateVehicleStatus(sub: string, accountId: string, input: { status: VehicleStatus }, roles: string[]) {
     input = pick(input, ["status"]);
     validateFields(input, ["status"]);
 
@@ -174,13 +184,16 @@ export default class AccountService {
       PermissionScope.ALL,
     ]);
 
-    const acc = await account.findById(accountId).lean<Account>().exec();
+    let acc = await account.findById(accountId).lean<Account>().exec();
     if (!acc) throw createError("Account not found", 404);
-
-    return await account
+    acc = await account
       .updateOne({ _id: acc._id }, { vehicleInfo: { ...acc.vehicleInfo, vehicleStatus: input.status } }, { new: true })
       .lean<Account>()
       .exec();
+
+    if (acc) await RapydBus.emit("account:vehicle:status:updated", { owner: acc, modifier: sub });
+
+    return acc;
   }
 
   static async removeDeprecatedAccountRoles(accountId: string, roles: string[]) {
@@ -257,42 +270,48 @@ export default class AccountService {
   async changePassword(accountId: string, input: ChangePasswordDto, roles: string[]): Promise<Account> {
     await RoleService.hasPermission(roles, AvailableResource.ACCOUNT, [PermissionScope.UPDATE, PermissionScope.ALL]);
     const acc = await this.passwordService.changePassword(accountId, input);
+    await RapydBus.emit("account:password:changed", { owner: acc });
     return acc;
   }
 
-  async deleteAccount(id: string, roles: string[]) {
+  async deleteAccount(sub: string, id: string, roles: string[]) {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
       PermissionScope.DELETE,
       PermissionScope.ALL,
     ]);
-    const data = await account.findOneAndDelete({ _id: id }, { new: true }).lean().exec();
+    const data = await account.findOneAndDelete({ _id: id }, { new: true }).lean<Account>().exec();
     if (!data) throw createError(`Not found`, 404);
+    await RapydBus.emit("account:deleted", { owner: data, modifier: sub });
     return data;
   }
 
-  async disableAccount(id: string, roles: string[]) {
+  async disableAccount(sub: string, id: string, roles: string[]) {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
       PermissionScope.DISABLE,
       PermissionScope.ALL,
     ]);
     const data = await account
       .findOneAndUpdate({ _id: id }, { control: { enabled: false } })
-      .lean()
+      .lean<Account>()
       .exec();
     if (!data) throw createError(`Account not found`, 404);
+    await RapydBus.emit("account:disabled", { owner: data, modifier: sub });
+
     return data;
   }
 
-  async enableAccount(id: string, roles: string[]) {
+  async enableAccount(sub: string, id: string, roles: string[]) {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
       PermissionScope.ENABLE,
       PermissionScope.ALL,
     ]);
     const data = await account
       .findOneAndUpdate({ _id: id }, { control: { enabled: true } })
-      .lean()
+      .lean<Account>()
       .exec();
     if (!data) throw createError(`Account not found`, 404);
+    await RapydBus.emit("account:enabled", { owner: data, modifier: sub });
+
     return data;
   }
 
@@ -308,10 +327,13 @@ export default class AccountService {
       true
     );
 
-    const _account = await account.findByIdAndUpdate(input.accountId, { isEmailVerified: true }, { new: true });
+    const _account = await account
+      .findByIdAndUpdate(input.accountId, { isEmailVerified: true }, { new: true })
+      .lean<Account>()
+      .exec();
 
     await this.authVerificationService.removeVerification(verification._id);
-
+    await RapydBus.emit("account:verified", { owner: _account });
     return _account;
   }
 
@@ -326,9 +348,10 @@ export default class AccountService {
     );
 
     const _account = await this.passwordService.addPassword(input.accountId, input.password);
-
-    await this.authVerificationService.removeVerification(verification._id);
-
+    await Promise.all([
+      this.authVerificationService.removeVerification(verification._id),
+      RapydBus.emit("account:password:reset", { owner: _account }),
+    ]);
     return _account;
   }
 
@@ -374,5 +397,11 @@ export default class AccountService {
     const acc = account.findOneAndUpdate({ _id: accountId }, { lastSeen: new Date() }, { new: true }).lean<Account>().exec();
     if (!acc && validate) throw createError("Account not found", 404);
     return;
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the AccountEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new AccountEventListener();
   }
 }

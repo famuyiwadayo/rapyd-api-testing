@@ -16,3 +16,5 @@ export { default as ServicingService } from "./servicing.service";
 
 export { default as LoanService } from "./loan.service";
 export { default as GuarantorService } from "./guarantor.service";
+
+export { default as NotificationService } from "./notification.service";

@@ -28,6 +28,16 @@ export default class VehicleController {
     }
   }
 
+  async getAssignedVehicleAnalysis(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user } = req;
+      const data = await service.getAssignedVehicleAnalysis(user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAvailableVehicleMakeModels(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, params } = req;

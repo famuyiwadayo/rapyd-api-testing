@@ -8,14 +8,10 @@ import cors from "cors";
 import helmet from "helmet";
 import config from "./src/config";
 import Routes from "./src/routes";
-import {
-  logRequests,
-  catchRequest,
-  handleError,
-  compressor,
-} from "./src/middlewares";
+import { logRequests, catchRequest, handleError, compressor } from "./src/middlewares";
 import { AuthPayload } from "./src/interfaces/ros";
 import SystemService from "./src/services/system.service";
+import { EventManager } from "./src/libs";
 // import { Loan } from "./src/libs";
 
 declare global {
@@ -84,6 +80,8 @@ const run = async () => {
   try {
     await mongoose.connect(config.DB_URI, {});
     new SystemService().ensureSystemServices();
+    EventManager.subscribeEvents();
+
     console.log("\n🐕‍🦺 db connected!");
   } catch (error) {
     console.error(error);
@@ -94,22 +92,22 @@ const run = async () => {
     // app.use(Sentry.Handlers.errorHandler());
     process.on("uncaughtException", async (error) => {
       console.log("An Uncaught exception has occurred", error);
+      EventManager.unsubscribeEvents();
       process.exit(0);
     });
 
     process.on("SIGINT", async () => {
       console.log("A SIG-INT has occurred");
+      EventManager.unsubscribeEvents();
       process.exit(0);
     });
 
     process.on("SIGTERM", async () => {
       console.log("A SIG-TERM has occurred");
-
+      EventManager.unsubscribeEvents();
       process.exit(0);
     });
-    console.log(
-      `🚀 ${config.NAME} service::v${config.VERSION} listening on http://localhost:${config.PORT}`
-    );
+    console.log(`🚀 ${config.NAME} service::v${config.VERSION} listening on http://localhost:${config.PORT}`);
   });
 };
 

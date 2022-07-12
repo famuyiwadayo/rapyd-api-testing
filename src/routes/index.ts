@@ -14,6 +14,7 @@ import LoanRouter from "./loan.routes";
 import GuarantorRouter from "./guarantor.routes";
 import TransactionRouter from "./transactions.routes";
 import EmailRouter from "./email.routes";
+import NotificationRouter from "./notification.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
 import { sendResponse } from "../utils";
@@ -35,6 +36,7 @@ routes.use("/finances", FinanceRouter);
 routes.use("/services", ServicingRouter);
 routes.use("/guarantors", GuarantorRouter);
 routes.use("/transactions", TransactionRouter);
+routes.use("/notifications", NotificationRouter);
 
 routes.use("/emails", EmailRouter);
 

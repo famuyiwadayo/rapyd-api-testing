@@ -6,6 +6,8 @@ const router = Router();
 const controller = new AccountController();
 // const coinController = new CoinController();
 
+router.get("/test", authGuard, controller.testAccountEvents);
+
 // GET
 router.get("/", authGuard, controller.getAccounts); // ✅
 // router.get("/coins", authGuard, coinController.getCoinsByAccount); // ✅

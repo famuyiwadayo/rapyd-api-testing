@@ -45,6 +45,7 @@ export default class VehicleService {
       year?: string; // hypen separated string of year, 2000 - 20222
       searchPhrase?: string;
       mileage?: string;
+      assigned?: boolean;
     },
     dryRun?: boolean
   ): Promise<PaginatedDocument<Vehicle[]>> {
@@ -71,32 +72,32 @@ export default class VehicleService {
 
     // ?color=626797ee8bb9cffc216a2474,626673a78bb9cffc211a69a9&features=626796f48bb9cffc2169e3d0
 
-    let queries: { $and?: any[]; $text?: { $search: string } } = {};
+    let queries: { isAssigned?: boolean; $and?: any[]; $text?: { $search: string } } = { isAssigned: false };
     // let population: any[] = ["color"];
 
     if (filters?.fuelType) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({ $or: fuels.map((fuel) => ({ fuelType: fuel })) });
     }
     if (filters?.gearbox) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({ $or: gearboxs.map((box) => ({ gearBox: box })) });
     }
     if (filters?.color) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         $or: colors.map((color) => ({ color })),
       });
     }
     if (filters?.features) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         features: { $in: features },
       });
       //   population.push({ path: "features", match: { slug: { $in: features } } });
     }
     if (filters?.make) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         $or: makes.map((make) => ({
           make: { $regex: new RegExp(make, "i") },
@@ -104,7 +105,7 @@ export default class VehicleService {
       });
     }
     if (filters?.model) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         $or: models.map((model) => ({
           model: { $regex: new RegExp(model, "i") },
@@ -112,13 +113,13 @@ export default class VehicleService {
       });
     }
     if (filters?.year) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         year: { $gte: fromYear, $lte: toYear },
       });
     }
     if (filters?.mileage) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       if (fromMile && toMile) {
         queries.$and!.push({
           mileage: { $gte: fromMile, $lte: toMile },
@@ -133,6 +134,10 @@ export default class VehicleService {
 
     if (filters?.searchPhrase) {
       queries.$text = { $search: filters.searchPhrase };
+    }
+
+    if (filters?.assigned) {
+      queries.isAssigned = filters?.assigned;
     }
 
     // console.log(JSON.stringify({ filters }));
@@ -200,6 +205,20 @@ export default class VehicleService {
     const _vehicle = await vehicle.findById(vehicleId).populate(["features", "color", "type"]).lean<Vehicle>().exec();
     if (!_vehicle) throw createError("Vehicle not found", 404);
     return _vehicle;
+  }
+
+  async getAssignedVehicleAnalysis(roles: string[]): Promise<{ assigned: number; unassigned: number }> {
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
+      PermissionScope.READ,
+      PermissionScope.ALL,
+    ]);
+
+    const [assigned, unassigned] = await Promise.all([
+      vehicle.countDocuments({ isAvailable: true, isAssigned: true }).exec(),
+      vehicle.countDocuments({ isAvailable: true, isAssigned: false }).exec(),
+    ]);
+
+    return { assigned, unassigned };
   }
 
   async getSimilarVehicles(vehicleId: string, roles: string[]): Promise<Vehicle[]> {
@@ -469,9 +488,18 @@ export default class VehicleService {
     return _property;
   }
 
-  static async checkVehicleExists(id: string): Promise<boolean> {
-    const count = await vehicle.countDocuments({ _id: id }).exec();
+  static async checkVehicleExists(id: string, filters?: any): Promise<boolean> {
+    const count = await vehicle.countDocuments({ _id: id, ...(filters ?? {}) }).exec();
     return count > 0;
+  }
+
+  static async assignVehicle(accountId: string, vehicleId: string) {
+    if (await VehicleService.checkVehicleExists(vehicleId, { isAssigned: true })) throw createError("Vehicle already assigned", 403);
+    const v = await vehicle
+      .findByIdAndUpdate(vehicleId, { assignee: accountId, isAssigned: true }, { new: true })
+      .lean<Vehicle>()
+      .exec();
+    return v;
   }
 }
 

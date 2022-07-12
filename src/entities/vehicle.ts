@@ -1,10 +1,5 @@
-import {
-  getModelForClass,
-  index,
-  modelOptions,
-  prop,
-  Ref,
-} from "@typegoose/typegoose";
+import { getModelForClass, index, modelOptions, prop, Ref } from "@typegoose/typegoose";
+import { Account } from "./account";
 import BaseEntity from "./base";
 import { VehicleColor } from "./vehicleColor";
 import { VehicleFeature } from "./vehicleFeature";
@@ -69,6 +64,9 @@ export class Vehicle extends BaseEntity {
   @prop({ ref: () => VehicleColor })
   color: Ref<VehicleColor>;
 
+  @prop({ ref: () => "Account" })
+  assignee: Ref<Account>;
+
   @prop({ ref: () => VehicleType })
   type: Ref<VehicleType>;
 
@@ -81,7 +79,7 @@ export class Vehicle extends BaseEntity {
   @prop()
   description: string;
 
-  @prop()
+  @prop({ default: true })
   isAvailable: boolean;
 
   @prop({ type: () => VehicleImage })
@@ -89,6 +87,9 @@ export class Vehicle extends BaseEntity {
 
   @prop()
   rapydId: string;
+
+  @prop({ default: false })
+  isAssigned: boolean;
 }
 
 export default getModelForClass(Vehicle);

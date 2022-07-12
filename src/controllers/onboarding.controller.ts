@@ -25,18 +25,10 @@ export default class OnboardingController {
     }
   }
 
-  async getCurrentDriverOnboardingInfo(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  async getCurrentDriverOnboardingInfo(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.getCurrentDriverOnboardingInfo(
-        sub,
-        roles,
-        req.query.dryRun as any
-      );
+      const data = await service.getCurrentDriverOnboardingInfo(sub, roles, req.query.dryRun as any);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -46,11 +38,7 @@ export default class OnboardingController {
   async getApplicationStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.getApplicationStatus(
-        sub,
-        roles,
-        req.query.dryRun as any
-      );
+      const data = await service.getApplicationStatus(sub, roles, req.query.dryRun as any);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -90,12 +78,7 @@ export default class OnboardingController {
   async selectVehicle(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.selectVehicle(
-        sub,
-        req.params.vehicleId,
-        req.body,
-        roles
-      );
+      const data = await service.selectVehicle(sub, req.params.vehicleId, req.body, roles);
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);
@@ -105,11 +88,7 @@ export default class OnboardingController {
   async hirePurchaseContract(req: Request, res: Response, next: NextFunction) {
     try {
       const { sub, roles } = req.user;
-      const data = await service.createHirePurchaseContract(
-        sub,
-        req.body,
-        roles
-      );
+      const data = await service.createHirePurchaseContract(sub, req.body, roles);
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);
@@ -128,8 +107,8 @@ export default class OnboardingController {
 
   async approveApplication(req: Request, res: Response, next: NextFunction) {
     try {
-      const { roles } = req.user;
-      const data = await service.approveApplication(req.params.id, roles);
+      const { roles, sub } = req.user;
+      const data = await service.approveApplication(sub, req.params.id, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);

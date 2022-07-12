@@ -19,12 +19,7 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.COMPLAINT,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.CREATE,
-          PermissionScope.UPDATE,
-          PermissionScope.DELETE,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.DELETE],
       },
       {
         name: AvailableResource.COMPLAINT_FEEDBACK,
@@ -32,19 +27,11 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.ACCOUNT,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-          PermissionScope.VERIFY,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.VERIFY],
       },
       {
         name: AvailableResource.ONBOARDING,
-        scopes: [
-          PermissionScope.CREATE,
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-        ],
+        scopes: [PermissionScope.CREATE, PermissionScope.READ, PermissionScope.UPDATE],
       },
       {
         name: AvailableResource.PAYMENT_ITEM,
@@ -60,12 +47,11 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.GUARANTOR,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-          PermissionScope.CREATE,
-          PermissionScope.DELETE,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.CREATE, PermissionScope.DELETE],
+      },
+      {
+        name: AvailableResource.NOTIFICATION,
+        scopes: [PermissionScope.READ, PermissionScope.MARK],
       },
     ],
   },
@@ -81,28 +67,15 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.COMPLAINT_FEEDBACK,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.CREATE,
-          PermissionScope.UPDATE,
-          PermissionScope.DELETE,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.DELETE],
       },
       {
         name: AvailableResource.ACCOUNT,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-          PermissionScope.VERIFY,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.VERIFY],
       },
       {
         name: AvailableResource.ONBOARDING,
-        scopes: [
-          PermissionScope.CREATE,
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-        ],
+        scopes: [PermissionScope.CREATE, PermissionScope.READ, PermissionScope.UPDATE],
       },
       {
         name: AvailableResource.PAYMENT_ITEM,
@@ -118,12 +91,12 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.GUARANTOR,
-        scopes: [
-          PermissionScope.READ,
-          PermissionScope.UPDATE,
-          PermissionScope.CREATE,
-          PermissionScope.DELETE,
-        ],
+        scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.CREATE, PermissionScope.DELETE],
+      },
+
+      {
+        name: AvailableResource.NOTIFICATION,
+        scopes: [PermissionScope.READ, PermissionScope.MARK],
       },
     ],
   },
@@ -171,6 +144,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.HISTORY,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.NOTIFICATION,
         scopes: [PermissionScope.ALL],
       },
     ],

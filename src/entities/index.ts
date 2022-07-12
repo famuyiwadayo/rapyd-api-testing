@@ -40,3 +40,5 @@ export { default as loan, Loan, LoanStatus } from "./loan";
 
 export { default as servicing, Servicing } from "./servicing";
 export { default as guarantor, Guarantor } from "./guarantor";
+
+export { default as notification, Notification, NotificationType } from "./notification";
