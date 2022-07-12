@@ -44,7 +44,7 @@ export default class FinanceService {
     sub: string,
     vehicleId: string,
     roles: string[],
-    filters?: IPaginationFilter
+    filters?: IPaginationFilter & { paid?: boolean }
   ): Promise<PaginatedDocument<LoanSpread[]>> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
@@ -56,7 +56,12 @@ export default class FinanceService {
     const fin = await finance.findOne({ item: vehicleId, account: sub }).lean<Finance>().exec();
     if (!fin) throw createError("Vehicle finance details not found");
 
-    return await paginate("loanSpread", { account: sub, finance: fin?._id }, filters, { sort: { paybackDue: "asc" } });
+    let queries: any = { account: sub, finance: fin?._id };
+    if (filters?.paid) {
+      queries = { paid: filters.paid };
+    }
+
+    return await paginate("loanSpread", queries, filters, { sort: { paidOn: "desc" } });
   }
 
   async getSpreads(
