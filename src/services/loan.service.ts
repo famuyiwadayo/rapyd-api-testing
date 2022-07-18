@@ -8,6 +8,7 @@ import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
 import AccessService from "./access.service";
 
 import consola from "consola";
+import TransactionReferenceService from "./transactionReference.service";
 
 export default class LoanService {
   async getLoans(
@@ -161,8 +162,12 @@ export default class LoanService {
   }
 
   static async checkLoanBeforePaymentUpdate(loanId: string, amount: number) {
-    const l = await loan.findById(loanId).lean<Loan>().exec();
+    const [l, pendingLoan] = await Promise.all([
+      loan.findById(loanId).lean<Loan>().exec(),
+      TransactionReferenceService.hasPendingLoan(loanId),
+    ]);
 
+    if (pendingLoan) throw createError("You already have a pending loan", 403);
     if (!l) throw createError("Loan not found", 404);
 
     if (l.status === LoanStatus.PENDING) throw createError("Loan as not been approved", 401);

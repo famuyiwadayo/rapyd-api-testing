@@ -115,6 +115,10 @@ export default class TransactionReferenceService {
     return await this.getTransactionReference(reference);
   }
 
+  static async hasPendingLoan(itemId: string): Promise<boolean> {
+    return Boolean((await transactionReference.countDocuments({ itemId, reason: TransactionReason.LOAN_PAYMENT }).exec()) > 0);
+  }
+
   public static generateReferenceNumber(): string {
     return generate({
       prefix: "ref-",
