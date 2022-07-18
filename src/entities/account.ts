@@ -131,6 +131,9 @@ export class Account extends BaseEntity {
 
   @prop({ type: () => AccountBankDetails })
   bankDetails: AccountBankDetails;
+
+  @prop()
+  hirePurchaseDocument: string;
 }
 
 export default getModelForClass(Account);

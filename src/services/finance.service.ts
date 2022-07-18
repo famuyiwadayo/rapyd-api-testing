@@ -58,7 +58,7 @@ export default class FinanceService {
     const fin = await finance.findOne({ item: vehicleId, account: sub }).lean<Finance>().exec();
     if (!fin) throw createError("Vehicle finance details not found");
 
-    let queries: any = { account: sub, finance: fin?._id, $and: [] };
+    let queries: any = { account: sub, finance: fin?._id };
     if (filters?.paid) {
       queries = { paid: filters.paid };
     }
