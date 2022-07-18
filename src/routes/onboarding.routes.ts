@@ -13,6 +13,7 @@ router.put("/hirePurchase", authGuard, controller.hirePurchaseContract);
 router.post("/payment", authGuard, controller.makePayment);
 router.post("/guarantors", authGuard, controller.addGuarantors);
 router.post("/approve/:id", authGuard, controller.approveApplication);
+router.post("/decline/:id", authGuard, controller.declineApplication);
 
 router.get("/", authGuard, controller.getAllApplications);
 router.get("/me", authGuard, controller.getCurrentDriverOnboardingInfo);

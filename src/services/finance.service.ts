@@ -44,8 +44,10 @@ export default class FinanceService {
     sub: string,
     vehicleId: string,
     roles: string[],
-    filters?: IPaginationFilter & { paid?: boolean }
+    filters?: IPaginationFilter & { paid?: boolean; status?: string }
   ): Promise<PaginatedDocument<LoanSpread[]>> {
+    const statuses = String(filters?.status ?? "").split(",");
+
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
@@ -56,9 +58,17 @@ export default class FinanceService {
     const fin = await finance.findOne({ item: vehicleId, account: sub }).lean<Finance>().exec();
     if (!fin) throw createError("Vehicle finance details not found");
 
-    let queries: any = { account: sub, finance: fin?._id };
+    let queries: any = { account: sub, finance: fin?._id, $and: [] };
     if (filters?.paid) {
       queries = { paid: filters.paid };
+    }
+    if (filters?.status) {
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: statuses.map((status) => ({
+          status: { $regex: new RegExp(status, "i") },
+        })),
+      });
     }
 
     return await paginate("loanSpread", queries, filters, { sort: { paidOn: "desc" } });
@@ -68,16 +78,31 @@ export default class FinanceService {
     accountId: string,
     financeId: string,
     roles: string[],
-    filters?: IPaginationFilter
+    filters?: IPaginationFilter & { status?: string }
   ): Promise<PaginatedDocument<LoanSpread[]>> {
+    const statuses = String(filters?.status ?? "").split(",");
+    let queries: { account: string; finance: string; $and?: any[]; $text?: { $search: string } } = {
+      account: accountId,
+      finance: financeId,
+    };
+
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.VEHICLE, [
       PermissionScope.READ,
       PermissionScope.ALL,
     ]);
 
+    if (filters?.status) {
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: statuses.map((status) => ({
+          status: { $regex: new RegExp(status, "i") },
+        })),
+      });
+    }
+
     console.log({ accountId, financeId });
 
-    return await paginate("loanSpread", { account: accountId, finance: financeId }, filters, { sort: { paybackDue: "asc" } });
+    return await paginate("loanSpread", queries, filters, { sort: { paybackDue: "asc" } });
   }
 
   async getCurrentUserVechicleFinance(sub: string, vehicleId: string, roles: string[]): Promise<Finance> {

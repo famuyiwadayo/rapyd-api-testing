@@ -48,10 +48,14 @@ export default class PaymentService {
         break;
       case TransactionReason.LOAN_PAYMENT:
         if (!body.itemId) throw createError("itemId is required", 400);
+        if (!body.amount) throw createError("amount is required", 400);
+        if (+body?.amount < 100) throw createError("amount is too small", 400);
         await LoanService.checkLoanBeforePaymentUpdate(body.itemId, body.amount);
         break;
       case TransactionReason.AUTO_PAYBACK:
         if (!body.itemId) throw createError("itemId is required", 400);
+        if (!body.amount) throw createError("amount is required", 400);
+        if (+body?.amount < 100) throw createError("amount is too small", 400);
         await FinanceService.checkFianceBeforePaymentUpdate(body.itemId, body.amount);
         break;
     }

@@ -348,6 +348,23 @@ export default class OnboardingService {
     return application;
   }
 
+  async declineApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
+
+    const app = await onboarding.findById(id).lean<Onboarding>().exec();
+
+    if (!app) throw createError("Application not found", 404);
+    if (app && !app?.payment?.paid) throw createError("Application fee has not been paid", 400);
+
+    const [applic, _] = await Promise.all([
+      onboarding.findByIdAndUpdate(id, { status: ApplicationStatusEnum.DECLINED }, { new: true }).lean<Onboarding>().exec(),
+
+      RapydBus.emit("application:declined", { owner: app?.account as string, modifier: sub }),
+    ]);
+
+    return applic;
+  }
+
   // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
   // When typescript compiles the OnboardingEventListener, the addEvent decorator will be executed.
   static mountEventListener() {

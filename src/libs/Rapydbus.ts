@@ -20,6 +20,7 @@ export type RapydEventTypes = {
   // APPLICATION EVENT TYPES
   "application:payment:initiated": { owner: string };
   "application:approved": { owner: string; modifier: string };
+  "application:declined": { owner: string; modifier: string };
   "application:payment:confirmed": { owner: string; txId: string };
 };
 
