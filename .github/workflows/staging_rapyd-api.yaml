@@ -38,11 +38,8 @@ jobs:
       - name: Installing NPM
         run: npm install
 
-      - name: Linting check
+      - name: Build the application
         run: npm run build
-
-      - name: Building application
-        run: npm build
 
       - name: Generate deployment package
         run: |
