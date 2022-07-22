@@ -43,8 +43,9 @@ jobs:
 
       - name: Generate deployment package
         run: |
-          cd dist
-          zip -r rapyd-api-dev.zip * .[^.]* -x "**node_modules**"
+          zip -r rapyd-api-stage.zip * .[^.]* -x '**node_modules**' -x './src/*' -x '**.git**' -x '**.github**' \
+            -x '**.vscode**' -x '.dockerignore' -x '.gitignore' -x 'Procfile' -x 'README.md' -x 'yarn-error.log' \
+            -x 'deploy.sh' -x '.prettierrc' -x 'Dockerfile' -x '.env'
           ls -al
 
       - name: Get timestamp
@@ -65,11 +66,11 @@ jobs:
         with:
           aws_access_key: ${{secrets.ACCESS_KEY_ID}}
           aws_secret_key: ${{secrets.SECRET_ACCESS_KEY}}
-          application_name: application_name
-          environment_name: environment_name
+          application_name: rapydapi
+          environment_name: Rapydapi-staging
           region: us-east-2
           version_label: "e-learn-${{ steps.format-time.outputs.replaced }}"
-          deployment_package: deploy.zip
+          deployment_package: rapyd-api-stage.zip
 
       - name: Deployed!
         run: echo App deployed to ELB
