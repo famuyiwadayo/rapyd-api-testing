@@ -69,7 +69,7 @@ jobs:
           application_name: rapydapi
           environment_name: Rapydapi-staging
           region: us-east-2
-          version_label: "e-learn-${{ steps.format-time.outputs.replaced }}"
+          version_label: "rapyd-${{ steps.format-time.outputs.replaced }}"
           deployment_package: rapyd-api-stage.zip
 
       - name: Deployed!
