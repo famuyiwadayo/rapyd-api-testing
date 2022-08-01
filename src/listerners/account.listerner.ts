@@ -21,7 +21,7 @@ export default class AccountEventListerner {
 
   @addEvent("account:bank:added")
   static async OnAccountBankAdded({ owner }: RapydEventTypes["account:bank:added"]) {
-    const message = `👏 Your bank account info has been added.`;
+    const message = `👏 Your bank account info has been updated.`;
     const note = await NotificationService.create({
       message,
       display: true,

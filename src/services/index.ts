@@ -18,3 +18,5 @@ export { default as LoanService } from "./loan.service";
 export { default as GuarantorService } from "./guarantor.service";
 
 export { default as NotificationService } from "./notification.service";
+
+export { default as VerifyMeService } from "./verifyMe.service";

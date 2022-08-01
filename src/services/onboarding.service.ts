@@ -350,7 +350,6 @@ export default class OnboardingService {
 
   async declineApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
-
     const app = await onboarding.findById(id).lean<Onboarding>().exec();
 
     if (!app) throw createError("Application not found", 404);

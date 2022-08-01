@@ -29,7 +29,12 @@ export { default as vehicle, Vehicle, VehicleImage, VehicleImageMetadata } from 
 export { default as complaint, Complaint } from "./complaint";
 export { default as complaintFeedback, ComplaintFeedback } from "./complaintFeedback";
 
-export { default as transactionReference, TransactionReference, PaymentMethod } from "./transactionReference";
+export {
+  default as transactionReference,
+  TransactionReference,
+  PaymentMethod,
+  TransactionReferenceStatus,
+} from "./transactionReference";
 
 export { default as paymentItem, PaymentItem, PaymentItemFor } from "./paymentItem";
 

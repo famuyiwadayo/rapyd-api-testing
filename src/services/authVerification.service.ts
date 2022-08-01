@@ -46,7 +46,7 @@ export default class AuthVerificationService {
    *  send code via email to the user's email address ✅
    */
   async requestEmailVerification(accountId: string, reason: AuthVerificationReason): Promise<AuthVerification> {
-    const timeout = 1; // in minutes, should be 60 -> 1hr
+    const timeout = 60; // in minutes, should be 60 -> 1hr
 
     const acc = await account.findById(accountId).lean<Account>().exec();
     if (!acc) throw createError("Account not found", 404);

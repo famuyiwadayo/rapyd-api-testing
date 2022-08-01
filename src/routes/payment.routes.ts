@@ -9,6 +9,7 @@ router.post("/initialize", authGuard, controller.initialize);
 router.post("/items", authGuard, controller.addPaymentItem);
 
 router.put("/approve", authGuard, controller.approveBankTransfer);
+router.put("/decline", authGuard, controller.declineBankTransfer);
 router.put("/items/:itemId", authGuard, controller.updatePaymentItem);
 
 router.get("/items", authGuard, controller.getPaymentItems);

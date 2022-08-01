@@ -1,5 +1,5 @@
 import { Gender } from "../../valueObjects";
-import { registerDto } from ".";
+import { registerDto } from "./auth.dto";
 import { AccountBankDetails } from "../../entities";
 import { DriverStatus } from "../../entities/account";
 

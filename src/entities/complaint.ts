@@ -1,12 +1,6 @@
 // @ts-nocheck
 
-import {
-  getModelForClass,
-  index,
-  modelOptions,
-  prop,
-  Ref,
-} from "@typegoose/typegoose";
+import { getModelForClass, index, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Account } from "./account";
 import BaseEntity from "./base";
 
@@ -24,6 +18,9 @@ export class Complaint extends BaseEntity {
 
   @prop({ ref: () => Account })
   creator: Ref<Account>;
+
+  @prop({ type: String })
+  images: string[];
 }
 
 export default getModelForClass(Complaint);

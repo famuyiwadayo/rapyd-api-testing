@@ -15,6 +15,20 @@ export default class NotificationService {
     return await paginate("notification", { isAdmin: false, owner: sub }, filter);
   }
 
+  async markAsRead(sub: string, notificationIds: string[], roles: string[]) {
+    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.NOTIFICATION, [
+      PermissionScope.MARK,
+      PermissionScope.ALL,
+    ]);
+
+    const notifications = await notification
+      .find({ account: sub, _id: { $in: notificationIds } })
+      .lean<Notification[]>()
+      .exec();
+    console.log(notifications);
+    return notifications;
+  }
+
   async getAdminNotifications(roles: string[], filter?: IPaginationFilter): Promise<PaginatedDocument<Notification[]>> {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.NOTIFICATION, [
       PermissionScope.READ,

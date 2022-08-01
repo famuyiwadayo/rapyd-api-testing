@@ -9,4 +9,6 @@ const controller = new NotificationController();
 router.get("/", authGuard, controller.getAdminNotifications);
 router.get("/me", authGuard, controller.getNotifications);
 
+router.put("/me", authGuard, controller.markAsRead);
+
 export default router;
