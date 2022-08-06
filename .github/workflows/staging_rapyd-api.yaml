@@ -27,14 +27,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Installing NPM
         run: npm install
 
@@ -48,18 +40,21 @@ jobs:
             -x 'deploy.sh' -x '.prettierrc' -x 'Dockerfile' -x '.env'
           ls -al
 
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
       - name: Get timestamp
         uses: gerred/actions/current-time@master
         id: current-time
 
-      - name: Run string replace
-        uses: frabert/replace-string-action@master
-        id: format-time
-        with:
-          pattern: '[:\.]+'
-          string: "${{ steps.current-time.outputs.time }}"
-          replace-with: "-"
-          flags: "g"
+      - name: Get the VERSION LABEL
+        id: tag
+        run: echo ::set-output name=VERSION_LABEL::$(echo $GITHUB_SHA | cut -c -7)
 
       - name: Beanstalk Deploy for app
         uses: einaregilsson/beanstalk-deploy@v16
@@ -69,8 +64,8 @@ jobs:
           application_name: rapydapi
           environment_name: Rapydapi-staging
           region: eu-west-1
-          version_label: "rapyd-$GITHUB_SHA"
-          deployment_package: rapyd-api-stage.zip
+          version_label: "rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}"
+          deployment_package: rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}.zip
 
       - name: Deployed!
         run: echo App deployed to ELB
