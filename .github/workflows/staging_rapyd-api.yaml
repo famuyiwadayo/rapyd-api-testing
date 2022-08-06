@@ -33,9 +33,13 @@ jobs:
       - name: Build the application
         run: npm run build
 
+      - name: Get the VERSION LABEL
+        id: tag
+        run: echo ::set-output name=VERSION_LABEL::$(echo $GITHUB_SHA | cut -c -7)
+
       - name: Generate deployment package
         run: |
-          zip -r rapyd-api-stage.zip * .[^.]* -x '**node_modules**' -x './src/*' -x '**.git**' -x '**.github**' \
+          zip -r rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}.zip * .[^.]* -x '**node_modules**' -x './src/*' -x '**.git**' -x '**.github**' \
             -x '**.vscode**' -x '.dockerignore' -x '.gitignore' -x 'Procfile' -x 'README.md' -x 'yarn-error.log' \
             -x 'deploy.sh' -x '.prettierrc' -x 'Dockerfile' -x '.env'
           ls -al
@@ -51,10 +55,6 @@ jobs:
       - name: Get timestamp
         uses: gerred/actions/current-time@master
         id: current-time
-
-      - name: Get the VERSION LABEL
-        id: tag
-        run: echo ::set-output name=VERSION_LABEL::$(echo $GITHUB_SHA | cut -c -7)
 
       - name: Beanstalk Deploy for app
         uses: einaregilsson/beanstalk-deploy@v16
