@@ -69,7 +69,7 @@ jobs:
           application_name: rapydapi
           environment_name: Rapydapi-staging
           region: eu-west-1
-          version_label: "rapyd-${{ steps.format-time.outputs.replaced }}"
+          version_label: "rapyd-$GITHUB_SHA"
           deployment_package: rapyd-api-stage.zip
 
       - name: Deployed!
