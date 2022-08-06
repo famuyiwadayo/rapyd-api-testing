@@ -9,7 +9,7 @@
   "scripts": {
     "serve": "nodemon app.ts",
     "test:unit": "ENV_FILE=.env.test jest",
-    "build": "rimraf dist && tsc && yarn copy-files",
+    "build": "rimraf dist && tsc && npm copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.html dist/src",
     "start": "cross-env NODE_ENV=production node dist/app.js",
     "container:deploy": "chmod +x ./deploy.sh && ./deploy.sh",
