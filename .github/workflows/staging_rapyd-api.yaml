@@ -71,9 +71,9 @@ jobs:
         with:
           aws_access_key: ${{secrets.ACCESS_KEY_ID}}
           aws_secret_key: ${{secrets.SECRET_ACCESS_KEY}}
-          application_name: rapydapi
+          application_name: rapyd-api
           environment_name: Rapydapi-staging
-          region: eu-west-1
+          region: eu-central-1
           version_label: "rapyd-api-stage-${{ steps.format-time.outputs.replaced }}"
           deployment_package: rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}.zip
 
