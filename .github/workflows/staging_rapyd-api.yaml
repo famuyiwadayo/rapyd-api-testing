@@ -61,8 +61,8 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-            
-      - name: Get timestamp
+
+      - name: Get current time
         uses: gerred/actions/current-time@master
         id: current-time
 
