@@ -62,10 +62,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Get current time
-        uses: gerred/actions/current-time@master
-        id: current-time
-
       - name: Beanstalk Deploy for app
         uses: einaregilsson/beanstalk-deploy@v16
         with:
