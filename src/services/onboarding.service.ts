@@ -311,13 +311,17 @@ export default class OnboardingService {
   async approveApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
     await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
 
-    const application = await onboarding
+
+    let application = await onboarding.findById(id).lean<Onboarding>().exec();
+    if (!application) throw createError("Application not found", 404);
+    if (application && !application?.payment?.paid) throw createError("Application fee has not been paid", 400);
+
+    if(application.status === ApplicationStatusEnum.VERIFIED) return application;
+
+     application = await onboarding
       .findByIdAndUpdate(id, { status: ApplicationStatusEnum.VERIFIED }, { new: true })
       .lean<Onboarding>()
       .exec();
-
-    if (!application) throw createError("Application not found", 404);
-    if (application && !application?.payment?.paid) throw createError("Application fee has not been paid", 400);
 
     await Promise.all([
       account
@@ -363,6 +367,11 @@ export default class OnboardingService {
 
     return applic;
   }
+
+
+  // static async exists(value: any, key = "_id") {
+  //   return Boolean()
+  // }
 
   // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
   // When typescript compiles the OnboardingEventListener, the addEvent decorator will be executed.

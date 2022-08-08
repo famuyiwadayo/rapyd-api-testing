@@ -11,7 +11,7 @@ import BaseEntity from "./base";
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Guarantor extends BaseEntity {
   @prop()
-  name: string;
+  name?: string;
 
   @prop({ ref: () => Account })
   account: Ref<Account>;
@@ -20,7 +20,7 @@ export class Guarantor extends BaseEntity {
   email: string;
 
   @prop()
-  document: string;
+  document?: string;
 
   // @prop({ type: () => Phone, _id: false })
   // phone: Phone;

@@ -11,7 +11,7 @@ export default class OnboardingEventListener {
       NotificationService.getAccount(owner as string),
       NotificationService.getAccount(modifier as string),
     ]);
-    const message = `👏 Admin (${admin?.name}) approved ${join([driver?.firstName, driver?.lastName])}'s application`;
+    const message = `👏 Admin (${admin?.name}) approved ${join([driver?.firstName, driver?.lastName], ' ')}'s application`;
     await NotificationService.create({
       message,
       display: true,

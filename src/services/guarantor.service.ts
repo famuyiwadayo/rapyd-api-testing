@@ -122,7 +122,7 @@ export default class GuarantorService {
 
   public static async addMultipleGuarantor(
     account: string,
-    guarantors: Partial<Guarantor>[]
+    guarantors: Omit<Guarantor, 'createdAt' | 'updatedAt'>[]
   ): Promise<Guarantor[]> {
     const g = guarantors.map((g) => ({ ...g, account }));
     return await guarantor.insertMany([...g], { lean: true });
