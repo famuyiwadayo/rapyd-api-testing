@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - develop
+  pull_request:
+    branches:
+      - develop
 
 jobs:
   ci:
@@ -24,19 +27,23 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Installing NPM
         run: npm install
 
       - name: Build the application
         run: npm run build
 
-      - name: Get the VERSION LABEL
-        id: tag
-        run: echo ::set-output name=VERSION_LABEL::$(echo $GITHUB_SHA | cut -c -7)
-
       - name: Generate deployment package
         run: |
-          zip -r rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}.zip * .[^.]* -x '**node_modules**' -x './src/*' -x '**.git**' -x '**.github**' \
+          zip -r rapyd-api-stage.zip * .[^.]* -x '**node_modules**' -x './src/*' -x '**.git**' -x '**.github**' \
             -x '**.vscode**' -x '.dockerignore' -x '.gitignore' -x 'Procfile' -x 'README.md' -x 'yarn-error.log' \
             -x 'deploy.sh' -x '.prettierrc' -x 'Dockerfile' -x '.env'
           ls -al
@@ -54,24 +61,16 @@ jobs:
           replace-with: "-"
           flags: "g"
 
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Beanstalk Deploy for app
         uses: einaregilsson/beanstalk-deploy@v16
         with:
           aws_access_key: ${{secrets.ACCESS_KEY_ID}}
           aws_secret_key: ${{secrets.SECRET_ACCESS_KEY}}
-          application_name: rapyd-api
+          application_name: rapydapi
           environment_name: Rapydapi-staging
-          region: eu-central-1
-          version_label: "rapyd-api-stage-${{ steps.format-time.outputs.replaced }}"
-          deployment_package: rapyd-api-stage-${{steps.tag.outputs.VERSION_LABEL}}.zip
+          region: eu-west-1
+          version_label: "rapyd-${{ steps.format-time.outputs.replaced }}"
+          deployment_package: rapyd-api-stage.zip
 
       - name: Deployed!
         run: echo App deployed to ELB
