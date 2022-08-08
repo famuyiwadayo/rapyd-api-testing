@@ -8,6 +8,12 @@ export enum PaymentMethod {
   TRANSFER = "transfer",
 }
 
+export enum TransactionReferenceStatus {
+  PENDING = "pending",
+  APPROVED = "approved",
+  DECLINED = "declined",
+}
+
 export class TransactionReference extends BaseEntity {
   @prop({ ref: () => Account })
   account: Ref<Account>;
@@ -41,6 +47,9 @@ export class TransactionReference extends BaseEntity {
 
   @prop()
   bankTransferProof: string;
+
+  @prop({ enum: TransactionReferenceStatus, default: TransactionReferenceStatus.PENDING })
+  status: TransactionReferenceStatus;
 }
 
 export default getModelForClass(TransactionReference);

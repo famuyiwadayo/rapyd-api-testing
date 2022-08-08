@@ -25,6 +25,16 @@ export default class PaymentController {
     }
   }
 
+  async declineBankTransfer(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, body } = req;
+      const data = await service.declineBankTransfer(body, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async checkStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.checkStatus(req.params.ref);

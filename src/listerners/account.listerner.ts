@@ -21,7 +21,7 @@ export default class AccountEventListerner {
 
   @addEvent("account:bank:added")
   static async OnAccountBankAdded({ owner }: RapydEventTypes["account:bank:added"]) {
-    const message = `👏 Your bank account info has been added.`;
+    const message = `👏 Your bank account info has been updated.`;
     const note = await NotificationService.create({
       message,
       display: true,
@@ -61,7 +61,7 @@ export default class AccountEventListerner {
   @addEvent("account:deleted")
   static async OnAccountDeleted({ owner, modifier }: RapydEventTypes["account:deleted"]) {
     const admin = await NotificationService.getAccount(modifier as string);
-    const message = `🥶 Admin (${admin?.name}) deleted ${join([owner?.firstName, owner?.lastName])}'s account`;
+    const message = `🥶 Admin (${admin?.name}) deleted ${join([owner?.firstName, owner?.lastName], ' ')}'s account`;
     const note = await NotificationService.create({
       message,
       display: true,
@@ -77,7 +77,7 @@ export default class AccountEventListerner {
   @addEvent("account:disabled")
   static async OnAccountDisabled({ owner, modifier }: RapydEventTypes["account:disabled"]) {
     const admin = await NotificationService.getAccount(modifier as string);
-    const message = `🙊 Admin (${admin?.name}) disabled ${join([owner?.firstName, owner?.lastName])}'s account`;
+    const message = `🙊 Admin (${admin?.name}) disabled ${join([owner?.firstName, owner?.lastName], " ")}'s account`;
     const note = await NotificationService.create({
       message,
       display: true,
@@ -93,7 +93,7 @@ export default class AccountEventListerner {
   @addEvent("account:enabled")
   static async OnAccountEnabled({ owner, modifier }: RapydEventTypes["account:enabled"]) {
     const admin = await NotificationService.getAccount(modifier as string);
-    const message = `🥹 Admin (${admin?.name}) enabled ${join([owner?.firstName, owner?.lastName])}'s account`;
+    const message = `🥹 Admin (${admin?.name}) enabled ${join([owner?.firstName, owner?.lastName], " ")}'s account`;
     const note = await NotificationService.create({
       message,
       display: true,

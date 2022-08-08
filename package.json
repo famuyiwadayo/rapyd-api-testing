@@ -6,6 +6,11 @@
   "repository": "https://github.com/famuyiwadayo/rapyd-api.git",
   "author": "FAMUYIWA DAYO [https://github.com/famuyiwadayo]",
   "license": "MIT",
+  "engines" : { 
+    "npm" : ">=8.5.0",
+    "yarn": "1.22.19",
+    "node" : ">=16.14.1"
+  },
   "scripts": {
     "serve": "nodemon app.ts",
     "test:unit": "ENV_FILE=.env.test jest",

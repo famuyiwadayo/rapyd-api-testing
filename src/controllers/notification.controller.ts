@@ -15,6 +15,16 @@ export default class NotificationController {
     }
   }
 
+  async markAsRead(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, body } = req;
+      const data = await service.markAsRead(user.sub, body.ids, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAdminNotifications(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, query } = req;

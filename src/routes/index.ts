@@ -15,11 +15,13 @@ import GuarantorRouter from "./guarantor.routes";
 import TransactionRouter from "./transactions.routes";
 import EmailRouter from "./email.routes";
 import NotificationRouter from "./notification.routes";
+
+import VerifyMeRouter from "./verifyMe.routes";
 // import RegistrationRequestRouter from "./registrationRequest.routes";
 
 import { sendResponse } from "../utils";
 import config from "../config";
-import { PaymentService } from "../services";
+import { PaymentService, VerifyMeService } from "../services";
 
 const routes = Router();
 
@@ -40,6 +42,8 @@ routes.use("/notifications", NotificationRouter);
 
 routes.use("/emails", EmailRouter);
 
+routes.use("/verify", VerifyMeRouter);
+
 // routes.use("/registrations", RegistrationRequestRouter);
 
 routes.get("/healthcheck", (_, res, __) => {
@@ -52,6 +56,17 @@ routes.post("/webhook", async (req, res, _) => {
   if (hash == req.headers["x-paystack-signature"]) {
     // console.log(req.body);
     await PaymentService.checkTransactionApproved(req.body);
+  }
+
+  sendResponse(res, 200, {});
+});
+
+routes.post("/verifications/webhook", async (req, res, _) => {
+  //validate event
+  const hash = crypto.createHmac("sha512", config.VERIFY_ME_KEY).update(JSON.stringify(req.body)).digest("hex");
+  if (hash == req.headers["x-verifyme-signatue"]) {
+    // console.log(req.body);
+    await VerifyMeService.checkVerification(req.body);
   }
 
   sendResponse(res, 200, {});

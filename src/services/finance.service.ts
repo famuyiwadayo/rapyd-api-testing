@@ -48,6 +48,8 @@ export default class FinanceService {
   ): Promise<PaginatedDocument<LoanSpread[]>> {
     const statuses = String(filters?.status ?? "").split(",");
 
+    console.log("Statuses", statuses);
+
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
@@ -60,7 +62,7 @@ export default class FinanceService {
 
     let queries: any = { account: sub, finance: fin?._id };
     if (filters?.paid) {
-      queries = { paid: filters.paid };
+      queries = { ...queries, paid: filters.paid };
     }
     if (filters?.status) {
       queries = { ...queries, $and: [...(queries?.$and ?? [])] };
@@ -70,6 +72,8 @@ export default class FinanceService {
         })),
       });
     }
+
+    console.log("Queries", JSON.stringify(queries));
 
     return await paginate("loanSpread", queries, filters, { sort: { paidOn: "desc" } });
   }
@@ -605,6 +609,8 @@ export default class FinanceService {
   }
 
   public static async updatePayback(financeId: string, account: string, amount: number, txRef: string, method: PaymentMethod) {
+    console.log({ financeId, account, amount, txRef, method });
+
     const updates = {
       $inc: { amountPaid: amount, remainingDebt: -clamp(amount, 0, amount) },
     };

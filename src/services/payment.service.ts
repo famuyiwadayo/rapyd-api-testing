@@ -13,6 +13,8 @@ import {
   TransactionReference,
   transactionReference,
   PaymentItemFor,
+  Account,
+  TransactionReferenceStatus,
 } from "../entities";
 import RoleService from "./role.service";
 import OnboardingService from "./onboarding.service";
@@ -184,6 +186,7 @@ export default class PaymentService {
     console.log("Verifying transaction: ", response);
     const transactionReferenceService = new TransactionReferenceService();
     const txRef = await transactionReferenceService.getTransactionReference(data.reference);
+    const accountId = typeof txRef?.account === "string" ? (txRef?.account as string) : (txRef?.account as Account)?._id!;
     // const amount = transactionReference.amount;
     if (txRef.used) return console.warn(">>>>>>>Transaction reference already used");
     if (data.status.toLowerCase() === PaystackChargeStatus.SUCCESS) {
@@ -191,31 +194,37 @@ export default class PaymentService {
         case TransactionReason.ONBOARDING_PAYMENT:
           await Promise.all([
             await transactionReferenceService.markReferenceUsed(data.reference, true),
-            await OnboardingService.markOnboardingFeeAsPaid(txRef.account as string, txRef._id as string),
+            await transactionReferenceService.updateTransactionReference(data?.reference, {
+              status: TransactionReferenceStatus.APPROVED,
+            }),
+            await OnboardingService.markOnboardingFeeAsPaid(accountId, txRef._id as string),
           ]);
           break;
         case TransactionReason.AUTO_DEPOSIT:
           await Promise.all([
             await transactionReferenceService.markReferenceUsed(data.reference, true),
-            await FinanceService.markInitialDepositAsPaid(txRef?.itemId, txRef.account as string),
+            await transactionReferenceService.updateTransactionReference(data?.reference, {
+              status: TransactionReferenceStatus.APPROVED,
+            }),
+            await FinanceService.markInitialDepositAsPaid(txRef?.itemId, accountId as string),
           ]);
           break;
         case TransactionReason.LOAN_PAYMENT:
           await Promise.all([
             await transactionReferenceService.markReferenceUsed(data.reference, true),
-            await LoanService.updatePayback(txRef?.itemId, txRef?.account as string, txRef?.amount, txRef?._id as string),
+            await transactionReferenceService.updateTransactionReference(data?.reference, {
+              status: TransactionReferenceStatus.APPROVED,
+            }),
+            await LoanService.updatePayback(txRef?.itemId, accountId, txRef?.amount, txRef?._id as string),
           ]);
           break;
         case TransactionReason.AUTO_PAYBACK:
           await Promise.all([
             await transactionReferenceService.markReferenceUsed(data.reference, true),
-            await FinanceService.updatePayback(
-              txRef?.itemId,
-              txRef?.account as string,
-              txRef?.amount,
-              txRef?._id as string,
-              txRef?.paymentMethod
-            ),
+            await transactionReferenceService.updateTransactionReference(data?.reference, {
+              status: TransactionReferenceStatus.APPROVED,
+            }),
+            await FinanceService.updatePayback(txRef?.itemId, accountId, txRef?.amount, txRef?._id as string, txRef?.paymentMethod),
           ]);
           break;
       }
@@ -232,11 +241,11 @@ export default class PaymentService {
     proof: string
   ): Promise<TransactionReference> {
     // don't update existing tx, create new one instead.
-    const txNew = reason === TransactionReason.LOAN_PAYMENT;
+    // const txNew = reason === TransactionReason.LOAN_PAYMENT || reason === TransactionReason.AUTO_PAYBACK;
 
     if (!(await AccountService.checkAccountExists(accountId))) throw createError("Account not found", 403);
     const reference = await new TransactionReferenceService().addTransactionReference(accountId, amount, roles, reason, itemId, {
-      txNew,
+      txNew: true,
       method,
       proof,
     });
@@ -253,7 +262,9 @@ export default class PaymentService {
       PermissionScope.ALL,
     ]);
 
-    const check = Boolean(await transactionReference.countDocuments({ account, reference, receipt, used: false }).exec());
+    const check = Boolean(
+      await transactionReference.countDocuments({ account, reference, bankTransferProof: receipt, used: false }).exec()
+    );
     if (!check) throw createError("Transaction does not exist", 404);
 
     try {
@@ -262,6 +273,25 @@ export default class PaymentService {
       throw createError(error?.message, 400);
     }
 
-    return { approved: true };
+    return await new TransactionReferenceService().getTransactionReference(reference);
+  }
+
+  public async declineBankTransfer(input: { reference: string }, roles: string[]) {
+    validateFields(input, ["reference"]);
+    const { reference } = input;
+
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.PAYMENT_ITEM, [
+      PermissionScope.UPDATE,
+      PermissionScope.ALL,
+    ]);
+
+    const txRef = await new TransactionReferenceService().updateTransactionReference(reference, {
+      status: TransactionReferenceStatus.DECLINED,
+      used: false,
+    });
+
+    if (!txRef) throw createError("Transaction does not exist", 404);
+
+    return txRef;
   }
 }

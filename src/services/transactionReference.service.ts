@@ -86,9 +86,9 @@ export default class TransactionReferenceService {
       .exec();
   }
 
-  public async updateTransactionReference(reference: string, body: TransactionReference): Promise<TransactionReference> {
+  public async updateTransactionReference(reference: string, body: Partial<TransactionReference>): Promise<TransactionReference> {
     stripUpdateFields(body);
-    return await transactionReference.findOneAndUpdate({ reference }, body).lean<TransactionReference>().exec();
+    return await transactionReference.findOneAndUpdate({ reference }, body, { new: true }).lean<TransactionReference>().exec();
   }
 
   public async getTransactionReference(
