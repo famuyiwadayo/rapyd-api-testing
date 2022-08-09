@@ -37,7 +37,7 @@ import PaymentService from "./payment.service";
 
 import consola from "consola";
 import { isPast } from "date-fns";
-import { clamp } from "lodash";
+import { clamp, isEmpty } from "lodash";
 
 export default class FinanceService {
   async getCurrentUserSpreads(
@@ -253,10 +253,15 @@ export default class FinanceService {
     const initiatePayment = async () => await FinanceService._makeInitialDeposit(accountId, vehicleId, input, roles);
 
     if (fin) {
-      if (!fin?.initialDepositPaid && fin?.initialDepositPaymentRef) {
+      if (!fin?.initialDepositPaid && !!fin?.initialDepositPaymentRef) {
+        console.log({initialDepositPaid: fin?.initialDepositPaid, initialDepositPaymentRef: fin?.initialDepositPaymentRef})
         const paymentStatus = await new PaymentService().checkStatus(fin?.initialDepositPaymentRef);
         if (paymentStatus.data.status !== PaystackChargeStatus.SUCCESS) return await initiatePayment();
       }
+      if(!fin?.initialDepositPaid && isEmpty(fin?.initialDepositPaymentRef ?? "")) {
+        return await initiatePayment();
+      }
+
       return fin;
     }
 
@@ -304,6 +309,7 @@ export default class FinanceService {
           period: "WEEKLY",
           initialDeposit: acc?.vehicleInfo?.deposit?.amount,
           totalSumWithInterest: inst?.pricePlusInterest,
+
         },
         getUpdateOptions()
       )
