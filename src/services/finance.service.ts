@@ -231,10 +231,14 @@ export default class FinanceService {
       callbackUrl: string;
       inline: boolean;
       initialDeposit: number;
+      method?: PaymentMethod;
+      receipt?: string;
     },
     roles: string[]
   ): Promise<(IPaystackInitTransactionResponse | TransactionReference) | Finance> {
     // validateFields(input, ["initialDeposit"]);
+
+    input.method = input?.method ?? PaymentMethod.ONLINE;
 
     const checks = await Promise.all([
       AccountService.checkAccountExists(accountId),
