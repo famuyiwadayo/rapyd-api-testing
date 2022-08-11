@@ -167,7 +167,7 @@ export default class LoanService {
       TransactionReferenceService.hasPendingLoan(loanId),
     ]);
 
-    if (pendingLoan) throw createError("You already have a pending loan", 403);
+    if (pendingLoan) throw createError("You already have a pending loan transaction", 403);
     if (!l) throw createError("Loan not found", 404);
 
     if (l.status === LoanStatus.PENDING) throw createError("Loan as not been approved", 401);

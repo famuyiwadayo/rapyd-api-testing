@@ -116,7 +116,7 @@ export default class TransactionReferenceService {
   }
 
   static async hasPendingLoan(itemId: string): Promise<boolean> {
-    return Boolean((await transactionReference.countDocuments({ itemId, reason: TransactionReason.LOAN_PAYMENT }).exec()) > 0);
+    return Boolean((await transactionReference.countDocuments({ itemId, reason: TransactionReason.LOAN_PAYMENT, used: false }).exec()) > 0);
   }
 
   public static generateReferenceNumber(): string {
