@@ -4,7 +4,7 @@ import RoleService from "./role.service";
 import { PaginatedDocument, IPaginationFilter } from "../interfaces/ros";
 import { PermissionScope, TransactionReason } from "../valueObjects";
 import { createError, getUpdateOptions, paginate, stripUpdateFields } from "../utils";
-import { AvailableResource, AvailableRole, PaymentMethod, transactionReference, TransactionReference } from "../entities";
+import { AvailableResource, AvailableRole, PaymentMethod, transactionReference, TransactionReference, TransactionReferenceStatus } from "../entities";
 
 export default class TransactionReferenceService {
   public async getTransactionReferences(
@@ -32,7 +32,38 @@ export default class TransactionReferenceService {
 
     return await paginate("transactionReference", queries, filters, {
       populate: ["account"],
+      sort: {
+        updatedAt: -1,
+        createdAt: -1
+      }
     });
+  }
+
+  public async getDriverTransactionReferences(
+    sub: string,
+    roles: string[],
+    filters: IPaginationFilter & { reason?: TransactionReason, status?: TransactionReferenceStatus }
+  ): Promise<PaginatedDocument<TransactionReference[]>> {
+    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.HISTORY, [
+      PermissionScope.READ,
+      PermissionScope.ALL,
+    ]);
+
+    const reasons = String(filters?.reason ?? "").split(",");
+
+    let queries: {account: string, $and?: any[]; $text?: { $search: string } } = {account: sub};
+    // if (filters?.paid) {
+    //   queries = { $and: [...(queries?.$and ?? [])] };
+    //   queries.$and!.push({ used: filters?.paid });
+    // }
+    if (filters?.reason) {
+      queries = {...queries, $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: reasons.map((reason) => ({ reason })),
+      });
+    }
+
+    return await paginate("transactionReference", queries, filters);
   }
 
   public async addTransactionReference(

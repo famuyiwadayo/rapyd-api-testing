@@ -98,12 +98,13 @@ export default class AccountService {
     );
 
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 401);
-    await RapydBus.emit("account:bank:added", { owner: sub });
-
-    return await account
+    const result = await account
       .findByIdAndUpdate(sub, { bankDetails: { ...input } }, { new: true })
       .lean<Account>()
       .exec();
+    await RapydBus.emit("account:bank:added", { owner: sub });
+
+    return result;
   }
 
   async deleteBankInfo(sub: string, roles: string[]): Promise<Account> {

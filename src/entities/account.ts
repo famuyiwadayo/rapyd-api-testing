@@ -79,6 +79,9 @@ export class Account extends BaseEntity {
   firstName: string;
 
   @prop()
+  address: string;
+
+  @prop()
   lastName: string;
 
   @prop()
