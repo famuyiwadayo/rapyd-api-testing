@@ -23,7 +23,7 @@ export default async function paginate<T>(
     model
       .find(query, null, options)
       .lean()
-      .sort({ updatedAt: -1 })
+      .sort({ createdAt: -1 })
       .limit(Math.abs(parseInt(filters?.limit!)))
       .skip(skip)
       .exec(),

@@ -1,7 +1,8 @@
-import { getModelForClass, prop, Ref } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Account } from "./account";
 import BaseEntity from "./base";
 
+@modelOptions({ schemaOptions: { timestamps: true } })
 export class Servicing extends BaseEntity {
   @prop({ ref: () => Account })
   driver: Ref<Account>;

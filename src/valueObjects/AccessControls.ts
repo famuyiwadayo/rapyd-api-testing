@@ -50,6 +50,10 @@ const defaultAccessControls: AccessControlType = {
         scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.CREATE, PermissionScope.DELETE],
       },
       {
+        name: AvailableResource.HISTORY,
+        scopes: [PermissionScope.READ],
+      },
+      {
         name: AvailableResource.NOTIFICATION,
         scopes: [PermissionScope.READ, PermissionScope.MARK],
       },
@@ -92,6 +96,10 @@ const defaultAccessControls: AccessControlType = {
       {
         name: AvailableResource.GUARANTOR,
         scopes: [PermissionScope.READ, PermissionScope.UPDATE, PermissionScope.CREATE, PermissionScope.DELETE],
+      },
+      {
+        name: AvailableResource.HISTORY,
+        scopes: [PermissionScope.ALL],
       },
 
       {

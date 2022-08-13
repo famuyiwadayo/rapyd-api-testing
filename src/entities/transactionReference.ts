@@ -1,4 +1,4 @@
-import { getModelForClass, prop, Ref } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { TransactionReason } from "../valueObjects";
 import { Account } from "./account";
 import BaseEntity from "./base";
@@ -14,6 +14,7 @@ export enum TransactionReferenceStatus {
   DECLINED = "declined",
 }
 
+@modelOptions({ schemaOptions: { timestamps: true } })
 export class TransactionReference extends BaseEntity {
   @prop({ ref: () => Account })
   account: Ref<Account>;

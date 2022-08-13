@@ -1,4 +1,4 @@
-import { getModelForClass, prop } from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop } from "@typegoose/typegoose";
 import BaseEntity from "./base";
 
 export enum PaymentItemFor {
@@ -6,6 +6,7 @@ export enum PaymentItemFor {
   BANK_TRANSFER = "bank_transfer",
 }
 
+@modelOptions({ schemaOptions: { timestamps: true } })
 export class PaymentItem extends BaseEntity {
   @prop({ enum: PaymentItemFor })
   for: PaymentItemFor;

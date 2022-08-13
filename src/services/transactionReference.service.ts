@@ -16,6 +16,8 @@ export default class TransactionReferenceService {
       PermissionScope.ALL,
     ]);
 
+    console.log("Transaction references", 'reading from txRefs')
+
     const reasons = String(filters?.reason ?? "").split(",");
 
     let queries: { $and?: any[]; $text?: { $search: string } } = {};
@@ -32,10 +34,6 @@ export default class TransactionReferenceService {
 
     return await paginate("transactionReference", queries, filters, {
       populate: ["account"],
-      sort: {
-        updatedAt: -1,
-        createdAt: -1
-      }
     });
   }
 
@@ -50,6 +48,7 @@ export default class TransactionReferenceService {
     ]);
 
     const reasons = String(filters?.reason ?? "").split(",");
+    const statuses = String(filters?.status ?? "").split(",");
 
     let queries: {account: string, $and?: any[]; $text?: { $search: string } } = {account: sub};
     // if (filters?.paid) {
@@ -62,8 +61,27 @@ export default class TransactionReferenceService {
         $or: reasons.map((reason) => ({ reason })),
       });
     }
+    if (filters?.status) {
+      queries = {...queries, $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: statuses.map((status) => ({ status })),
+      });
+    }
 
     return await paginate("transactionReference", queries, filters);
+  }
+
+
+  public async getDriverTransactionReferenceByRef(sub: string, ref: string, roles: string[]) {
+    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.HISTORY, [
+      PermissionScope.READ,
+      PermissionScope.ALL,
+    ]);
+
+    const result = await transactionReference.findOne({reference: ref, account: sub}).lean<TransactionReference>().exec();
+    if(!result) throw createError("Transaction not found", 404);
+
+    return result;
   }
 
   public async addTransactionReference(
