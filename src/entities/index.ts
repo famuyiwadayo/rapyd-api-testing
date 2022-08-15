@@ -47,3 +47,6 @@ export { default as servicing, Servicing } from "./servicing";
 export { default as guarantor, Guarantor } from "./guarantor";
 
 export { default as notification, Notification, NotificationType } from "./notification";
+
+export { default as bankInfo, BankInfo } from "./bankInfo";
+

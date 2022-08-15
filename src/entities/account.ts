@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
+import { getModelForClass, index, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Gender } from "../valueObjects";
+import { BankInfo } from "./bankInfo";
 import BaseEntity from "./base";
 import { Phone } from "./onboarding";
 import { Role } from "./role";
@@ -70,6 +71,8 @@ export class AccountBankDetails {
   accountNo: string;
 }
 
+
+@index({ "$**": "text" }) // to make the $text.$search work.
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Account extends BaseEntity {
   @prop()
@@ -82,10 +85,10 @@ export class Account extends BaseEntity {
   address: string;
 
   @prop()
-  lastName: string;
+  avatar?: string;
 
   @prop()
-  avatar?: string;
+  lastName: string;
 
   @prop({ enum: Gender })
   gender: Gender;
@@ -134,6 +137,9 @@ export class Account extends BaseEntity {
 
   @prop({ type: () => AccountBankDetails })
   bankDetails: AccountBankDetails;
+
+  @prop({ ref: () => BankInfo })
+  bankInfo: Ref<BankInfo>;
 
   @prop()
   hirePurchaseDocument: string;

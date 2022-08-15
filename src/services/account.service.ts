@@ -2,8 +2,8 @@
 
 import { AccountDto, UpdateAccountDto, VerifyEmailDto, ChangePasswordDto, ResetPasswordDto } from "../interfaces/dtos";
 import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
-import { account, Account } from "../entities";
-import { createError, paginate, removeForcedInputs, validateFields } from "../utils";
+import { account, Account, BankInfo, bankInfo } from "../entities";
+import { createError, getUpdateOptions, paginate, removeForcedInputs, validateFields } from "../utils";
 import { PasswordService, RoleService, AuthVerificationService } from "../services";
 import { PermissionScope, AuthVerificationReason } from "../valueObjects";
 
@@ -89,7 +89,7 @@ export default class AccountService {
       .exec();
   }
 
-  async addBank(sub: string, input: AddBankDto, roles: string[]): Promise<Account> {
+  async addBank(sub: string, input: AddBankDto, roles: string[]): Promise<BankInfo> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
       roles,
@@ -97,13 +97,18 @@ export default class AccountService {
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 401);
-    const result = await account
-      .findByIdAndUpdate(sub, { bankDetails: { ...input } }, { new: true })
+    if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
+
+
+    const result = await bankInfo.findOneAndUpdate({account: sub}, {...input}, getUpdateOptions()).lean<BankInfo>().exec();
+    if(!result) throw createError("Unable to add bank info", 403);
+
+    await account
+      .findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true })
       .lean<Account>()
       .exec();
-    await RapydBus.emit("account:bank:added", { owner: sub });
 
+    await RapydBus.emit("account:bank:added", { owner: sub });
     return result;
   }
 
@@ -115,10 +120,15 @@ export default class AccountService {
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 401);
+    if((await bankInfo.countDocuments({account: sub}).exec()) < 1) throw createError("Bank info not found", 404)
+    if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
+
+    await bankInfo.deleteOne({account: sub}).exec();
+
     await RapydBus.emit("account:bank:removed", { owner: sub });
 
-    return await account.findByIdAndUpdate(sub, { bankDetails: null }, { new: true }).lean<Account>().exec();
+
+    return await account.findByIdAndUpdate(sub, { bankInfo: null }, { new: true }).lean<Account>().exec();
   }
 
   async getAccounts(
@@ -221,7 +231,7 @@ export default class AccountService {
     ];
     await Promise.all(toRun);
 
-    let data = await account.findById(id).lean().exec();
+    let data = await account.findById(id).populate('bankInfo').lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
       data = await account
@@ -244,7 +254,7 @@ export default class AccountService {
     ];
     await Promise.all(toRun);
 
-    let data = await account.findById(id).lean().exec();
+    let data = await account.findById(id).populate(['bankInfo']).lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
       data = await account

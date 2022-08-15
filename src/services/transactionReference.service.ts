@@ -34,6 +34,7 @@ export default class TransactionReferenceService {
 
     return await paginate("transactionReference", queries, filters, {
       populate: ["account"],
+      sort: {updatedAt: -1}
     });
   }
 
@@ -68,7 +69,7 @@ export default class TransactionReferenceService {
       });
     }
 
-    return await paginate("transactionReference", queries, filters);
+    return await paginate("transactionReference", queries, filters, {sort: {updatedAt: -1}});
   }
 
 

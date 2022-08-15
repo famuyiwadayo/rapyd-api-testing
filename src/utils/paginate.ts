@@ -1,5 +1,7 @@
 import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
 import AccessService, { SchemaTypes } from "../services/access.service";
+import {QueryOptions} from 'mongoose'
+import { DocumentType } from "@typegoose/typegoose";
 
 const defaultFilters = { limit: "10", page: "1" };
 
@@ -7,7 +9,7 @@ export default async function paginate<T>(
   schemaType: SchemaTypes,
   query: any = {},
   filters: IPaginationFilter = defaultFilters,
-  options?: any
+  options?: QueryOptions<DocumentType<any>>
 ): Promise<PaginatedDocument<T>> {
   filters = { ...defaultFilters, ...filters };
   const model = AccessService.getModel(schemaType);

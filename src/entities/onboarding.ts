@@ -238,6 +238,8 @@ export class HirePurchaseContract extends BaseEntity {
   status: ApplicationStatusEnum;
 }
 
+
+
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Onboarding extends BaseEntity {
   @prop({ _id: false, type: () => Biodata })

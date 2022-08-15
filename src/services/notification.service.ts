@@ -21,11 +21,17 @@ export default class NotificationService {
       PermissionScope.ALL,
     ]);
 
-    const notifications = await notification
-      .find({ account: sub, _id: { $in: notificationIds } })
-      .lean<Notification[]>()
-      .exec();
-    console.log(notifications);
+    const notifications = await notification.updateMany({owner: sub, _id: { $in: notificationIds }}, {isRead: true}, {new: true}).exec();
+    return notifications;
+  }
+
+  async adminMarkAsRead(notificationIds: string[], roles: string[]) {
+    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.NOTIFICATION, [
+      PermissionScope.MARK,
+      PermissionScope.ALL,
+    ]);
+
+    const notifications = await notification.updateMany({isAdmin: true, _id: { $in: notificationIds }}, {isRead: true}, {new: true}).exec();
     return notifications;
   }
 

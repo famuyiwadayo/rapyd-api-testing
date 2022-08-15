@@ -71,17 +71,21 @@ export default class OnboardingService {
       PermissionScope.ALL,
     ]);
 
-    let queries: { $and?: any[] } = {};
+    let queries: {$and?: any[] } = {};
+
 
     if (filters?.vehicleId) {
-      queries = { $and: [...(queries?.$and ?? [])] };
+      queries = {...queries, $and: [...(queries?.$and ?? [])] };
       queries?.$and!.push({ "vehicleInfo.vehicle": filters.vehicleId });
     }
 
-    console.log(JSON.stringify(queries));
+    // console.log(JSON.stringify(queries));
 
     return await paginate("onboarding", queries, filters, {
       populate: ["account"],
+      sort: {
+        updatedAt: -1,
+      }
     });
   }
 
