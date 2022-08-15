@@ -19,6 +19,7 @@ router.get("/:id", authGuard, controller.accountById); // ✅
 // POST
 // router.post("/", authGuard, controller.createAccount); // ✅
 router.post("/bank", authGuard, controller.addBank); // ✅
+router.put("/bank", authGuard, controller.updateBank); // ✅
 
 // PUT
 router.put("/me", authGuard, controller.updateAccount); // ✅

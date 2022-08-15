@@ -58,6 +58,16 @@ export default class AccountController {
     }
   }
 
+  async updateBank(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { body, user } = req;
+      const result = await service.updateBank(user.sub, body, user.roles);
+      sendResponse(res, 200, result);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async getAccounts(req: Request, res: Response, next: NextFunction) {
     try {
       // console.log("account", req.query);

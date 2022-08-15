@@ -112,6 +112,30 @@ export default class AccountService {
     return result;
   }
 
+  async updateBank(sub: string, input: Partial<AddBankDto>, roles: string[]): Promise<BankInfo> {
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
+
+    if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
+
+
+    const result = await bankInfo.findOneAndUpdate({account: sub}, {...input}, getUpdateOptions()).lean<BankInfo>().exec();
+    if(!result) throw createError("Unable to add bank info", 403);
+
+    await account
+      .findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true })
+      .lean<Account>()
+      .exec();
+
+    await RapydBus.emit("account:bank:added", { owner: sub });
+    return result;
+  }
+
   async deleteBankInfo(sub: string, roles: string[]): Promise<Account> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
