@@ -26,5 +26,9 @@ export interface GetCurrentUserVehicleFinanceAnalysis {
       value: number;
       percentage: number;
     };
+    loanBalance: {
+      value: number;
+      percentage: number;
+    }
   };
 }

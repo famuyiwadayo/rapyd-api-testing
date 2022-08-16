@@ -205,4 +205,10 @@ export default class LoanService {
 
     return await loan.findByIdAndUpdate(l._id, updates, { new: true }).lean<Loan>().exec();
   }
+
+  static async getActiveLoan(accId: string) {
+    const _loan = (await loan.findOne({account: accId, status: LoanStatus.APPROVED}).lean<Loan>().exec())
+    if(!loan) return null;
+    return _loan;
+  }
 }

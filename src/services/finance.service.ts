@@ -38,6 +38,7 @@ import PaymentService from "./payment.service";
 import consola from "consola";
 import { isPast } from "date-fns";
 import { clamp, isEmpty } from "lodash";
+import LoanService from "./loan.service";
 
 export default class FinanceService {
   async getCurrentUserSpreads(
@@ -154,20 +155,23 @@ export default class FinanceService {
       PermissionScope.ALL,
     ]);
 
-    const fin = await finance
+    const [fin, loan] = await Promise.all([ finance
       .findOne({
         account: sub,
         category: FinanceCategory.AUTO,
         item: vehicleId,
       })
       .lean<Finance>()
-      .exec();
+      .exec(), LoanService.getActiveLoan(sub)  ]);
 
     if (!fin) throw createError("Vehicle finance details not found");
 
-    const total = fin?.principal + fin?.cumulativeInterest;
+    const total = fin?.principal + fin?.cumulativeInterest + (loan?.amount ?? 0);
     const debt = fin?.remainingDebt;
     const amountPaid = fin?.amountPaid;
+
+    const loanBalance = loan?.balance ?? 0;
+
 
     return {
       finance: fin,
@@ -184,6 +188,10 @@ export default class FinanceService {
           value: amountPaid,
           percentage: clamp((amountPaid / total) * 100, 0, 100),
         },
+        loanBalance: {
+          value: loan?.balance ?? 0,
+          percentage: clamp( (loanBalance / total) * 100, 0, 100)
+        }
       },
     };
   }

@@ -192,7 +192,9 @@ export default class AccountService {
     }
 
     // console.log(JSON.stringify(queries));
-    return await paginate("account", queries, filters);
+    return await paginate("account", queries, filters, {sort: {
+      updatedAt: -1
+    }});
   }
 
   async updatePrimaryRole(id: string, role: string, roles: string[], dryRun = true): Promise<Account> {

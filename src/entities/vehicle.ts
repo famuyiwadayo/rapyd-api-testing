@@ -90,6 +90,9 @@ export class Vehicle extends BaseEntity {
 
   @prop({ default: false })
   isAssigned: boolean;
+
+  @prop()
+  insuranceDue: Date;
 }
 
 export default getModelForClass(Vehicle);

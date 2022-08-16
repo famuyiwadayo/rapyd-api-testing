@@ -46,6 +46,7 @@ export default class VehicleService {
       searchPhrase?: string;
       mileage?: string;
       assigned?: boolean;
+      
     },
     dryRun?: boolean
   ): Promise<PaginatedDocument<Vehicle[]>> {
