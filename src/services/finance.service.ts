@@ -203,7 +203,7 @@ export default class FinanceService {
     dryRun = false
   ): Promise<GetPeriodicVehicleInstalmentRo> {
     validateFields(input, ["initialDeposit", "months"]);
-    if (+input.months < 24) throw createError("Months can't be less than 24 months");
+    if (+input.months < 12) throw createError("Can't be less than 12 months");
 
     if (!dryRun)
       await RoleService.requiresPermission(
@@ -216,7 +216,8 @@ export default class FinanceService {
     const v = await vehicle.findById(vehicleId).lean<Vehicle>().exec();
     if (!v) throw createError("Vehicle not found", 404);
 
-    const apr = v?.annualPercentageRate ?? config.ANNUAL_PERCENTAGE_RATE;
+    // const apr = v?.annualPercentageRate ?? config.ANNUAL_PERCENTAGE_RATE;
+    const apr = await PaymentService.getAPR(input.months);
     const totalWeeks = (input.months / 12) * 52;
 
     const weeklyInstalment = new Loan().getPeriodicPayment(v?.price, totalWeeks, apr, input.initialDeposit, "WEEKLY");

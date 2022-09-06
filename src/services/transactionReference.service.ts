@@ -4,19 +4,28 @@ import RoleService from "./role.service";
 import { PaginatedDocument, IPaginationFilter } from "../interfaces/ros";
 import { PermissionScope, TransactionReason } from "../valueObjects";
 import { createError, getUpdateOptions, paginate, stripUpdateFields } from "../utils";
-import { AvailableResource, AvailableRole, PaymentMethod, transactionReference, TransactionReference, TransactionReferenceStatus } from "../entities";
+import {
+  AvailableResource,
+  AvailableRole,
+  PaymentMethod,
+  transactionReference,
+  TransactionReference,
+  TransactionReferenceStatus,
+} from "../entities";
 
 export default class TransactionReferenceService {
   public async getTransactionReferences(
     roles: string[],
     filters: IPaginationFilter & { paid?: boolean; reason?: TransactionReason }
   ): Promise<PaginatedDocument<TransactionReference[]>> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.HISTORY, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.HISTORY,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
-    console.log("Transaction references", 'reading from txRefs')
+    console.log("Transaction references", "reading from txRefs");
 
     const reasons = String(filters?.reason ?? "").split(",");
 
@@ -34,14 +43,14 @@ export default class TransactionReferenceService {
 
     return await paginate("transactionReference", queries, filters, {
       populate: ["account"],
-      sort: {updatedAt: -1}
+      sort: { updatedAt: -1 },
     });
   }
 
   public async getDriverTransactionReferences(
     sub: string,
     roles: string[],
-    filters: IPaginationFilter & { reason?: TransactionReason, status?: TransactionReferenceStatus }
+    filters: IPaginationFilter & { reason?: TransactionReason; status?: TransactionReferenceStatus }
   ): Promise<PaginatedDocument<TransactionReference[]>> {
     await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.HISTORY, [
       PermissionScope.READ,
@@ -51,27 +60,26 @@ export default class TransactionReferenceService {
     const reasons = String(filters?.reason ?? "").split(",");
     const statuses = String(filters?.status ?? "").split(",");
 
-    let queries: {account: string, $and?: any[]; $text?: { $search: string } } = {account: sub};
+    let queries: { account: string; $and?: any[]; $text?: { $search: string } } = { account: sub };
     // if (filters?.paid) {
     //   queries = { $and: [...(queries?.$and ?? [])] };
     //   queries.$and!.push({ used: filters?.paid });
     // }
     if (filters?.reason) {
-      queries = {...queries, $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         $or: reasons.map((reason) => ({ reason })),
       });
     }
     if (filters?.status) {
-      queries = {...queries, $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries.$and!.push({
         $or: statuses.map((status) => ({ status })),
       });
     }
 
-    return await paginate("transactionReference", queries, filters, {sort: {updatedAt: -1}});
+    return await paginate("transactionReference", queries, filters, { sort: { updatedAt: -1 } });
   }
-
 
   public async getDriverTransactionReferenceByRef(sub: string, ref: string, roles: string[]) {
     await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.HISTORY, [
@@ -79,8 +87,8 @@ export default class TransactionReferenceService {
       PermissionScope.ALL,
     ]);
 
-    const result = await transactionReference.findOne({reference: ref, account: sub}).lean<TransactionReference>().exec();
-    if(!result) throw createError("Transaction not found", 404);
+    const result = await transactionReference.findOne({ reference: ref, account: sub }).lean<TransactionReference>().exec();
+    if (!result) throw createError("Transaction not found", 404);
 
     return result;
   }
@@ -148,10 +156,12 @@ export default class TransactionReferenceService {
     authenticate = false
   ): Promise<TransactionReference> {
     if (roles && authenticate)
-      await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.HISTORY, [
-        PermissionScope.READ,
-        PermissionScope.ALL,
-      ]);
+      await RoleService.requiresPermission(
+        [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
+        roles,
+        AvailableResource.HISTORY,
+        [PermissionScope.READ, PermissionScope.ALL]
+      );
 
     let txRef = transactionReference.findOne({ reference }).populate("account").lean<TransactionReference>().exec();
 
@@ -166,7 +176,9 @@ export default class TransactionReferenceService {
   }
 
   static async hasPendingLoan(itemId: string): Promise<boolean> {
-    return Boolean((await transactionReference.countDocuments({ itemId, reason: TransactionReason.LOAN_PAYMENT, used: false }).exec()) > 0);
+    return Boolean(
+      (await transactionReference.countDocuments({ itemId, reason: TransactionReason.LOAN_PAYMENT, used: false }).exec()) > 0
+    );
   }
 
   public static generateReferenceNumber(): string {

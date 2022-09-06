@@ -21,25 +21,33 @@ export default class NotificationService {
       PermissionScope.ALL,
     ]);
 
-    const notifications = await notification.updateMany({owner: sub, _id: { $in: notificationIds }}, {isRead: true}, {new: true}).exec();
+    const notifications = await notification
+      .updateMany({ owner: sub, _id: { $in: notificationIds } }, { isRead: true }, { new: true })
+      .exec();
     return notifications;
   }
 
   async adminMarkAsRead(notificationIds: string[], roles: string[]) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.NOTIFICATION, [
-      PermissionScope.MARK,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.NOTIFICATION,
+      [PermissionScope.MARK, PermissionScope.ALL]
+    );
 
-    const notifications = await notification.updateMany({isAdmin: true, _id: { $in: notificationIds }}, {isRead: true}, {new: true}).exec();
+    const notifications = await notification
+      .updateMany({ isAdmin: true, _id: { $in: notificationIds } }, { isRead: true }, { new: true })
+      .exec();
     return notifications;
   }
 
   async getAdminNotifications(roles: string[], filter?: IPaginationFilter): Promise<PaginatedDocument<Notification[]>> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.NOTIFICATION, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.NOTIFICATION,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     return await paginate("notification", { isAdmin: true }, filter, { populate: ["modifier"] });
   }

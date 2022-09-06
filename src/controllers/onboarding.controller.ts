@@ -118,7 +118,7 @@ export default class OnboardingController {
   async declineApplication(req: Request, res: Response, next: NextFunction) {
     try {
       const { roles, sub } = req.user;
-      const data = await service.declineApplication(sub, req.params.id, roles);
+      const data = await service.declineApplication(sub, req.params.id, req.body, roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);

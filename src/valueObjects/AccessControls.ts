@@ -160,6 +160,74 @@ const defaultAccessControls: AccessControlType = {
       },
     ],
   },
+  fleet_manager: {
+    permissions: [
+      {
+        name: AvailableResource.COMPLAINT_FEEDBACK,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.VEHICLE,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.COMPLAINT,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.ACCOUNT,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.ONBOARDING,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.SERVICING,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.GUARANTOR,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.NOTIFICATION,
+        scopes: [PermissionScope.ALL],
+      },
+    ],
+  },
+  accounts_admin: {
+    permissions: [
+      {
+        name: AvailableResource.ACCOUNT,
+        scopes: [PermissionScope.READ],
+      },
+      {
+        name: AvailableResource.ONBOARDING,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.PAYMENT_ITEM,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.LOAN,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.GUARANTOR,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.HISTORY,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.NOTIFICATION,
+        scopes: [PermissionScope.ALL],
+      },
+    ],
+  },
 };
 
 export default defaultAccessControls;

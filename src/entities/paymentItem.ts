@@ -4,7 +4,9 @@ import BaseEntity from "./base";
 export enum PaymentItemFor {
   ONBOARDING_PAYMENT = "onboard_payment",
   BANK_TRANSFER = "bank_transfer",
+  VEHICLE_INTEREST = "vehicle_interest"
 }
+
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class PaymentItem extends BaseEntity {
@@ -22,6 +24,14 @@ export class PaymentItem extends BaseEntity {
 
   @prop()
   accountNumber: string;
+
+  @prop()
+  duration: string;
+
+  @prop()
+  apr: number; // annual percentage rate
+
+  
 }
 
 export default getModelForClass(PaymentItem);

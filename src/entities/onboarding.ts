@@ -1,9 +1,4 @@
-import {
-  getModelForClass,
-  modelOptions,
-  prop,
-  Ref,
-} from "@typegoose/typegoose";
+import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
 import { Gender } from "../valueObjects";
 import { Account } from "./account";
 import BaseEntity from "./base";
@@ -50,6 +45,9 @@ export class PersonalInfo {
 
   @prop()
   bvn: string;
+
+  @prop()
+  residentialState: string;
 
   @prop()
   residentialAddress: string;
@@ -237,8 +235,6 @@ export class HirePurchaseContract extends BaseEntity {
   @prop({ enum: ApplicationStatusEnum, default: ApplicationStatusEnum.PENDING })
   status: ApplicationStatusEnum;
 }
-
-
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Onboarding extends BaseEntity {

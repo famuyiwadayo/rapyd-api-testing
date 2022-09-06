@@ -11,6 +11,8 @@ import {
   paymentItem,
   PaymentMethod,
   TransactionReference,
+  VerificationStatus,
+  verificationStatus,
 } from "../entities";
 import { PaystackChargeStatus, PermissionScope, TransactionReason } from "../valueObjects";
 import { createError, getUpdateOptions, paginate, removeForcedInputs, validateFields } from "../utils";
@@ -18,24 +20,28 @@ import { createError, getUpdateOptions, paginate, removeForcedInputs, validateFi
 import { BiodataDto, DocumentUploadDto, AddGuarantorsDto } from "../interfaces/dtos";
 
 import merge from "lodash/merge";
-import { HirePurchaseContractDto, UpdateApplicationStatusDto } from "../interfaces/dtos/onboarding.dto";
+import { DeclineApplicationDto, HirePurchaseContractDto, UpdateApplicationStatusDto } from "../interfaces/dtos/onboarding.dto";
 import AuthVerificationService from "./authVerification.service";
 import { IPaginationFilter, IPaystackInitTransactionResponse, PaginatedDocument } from "../interfaces/ros";
 import PaymentService from "./payment.service";
 import config from "../config";
 import VehicleService from "./vehicle.service";
+import VerifyMeService from "./verifyMe.service";
 import GuarantorService from "./guarantor.service";
 import { RapydBus } from "../libs";
 import { OnboardingEventListener } from "../listerners";
+import { EVerificationStatus } from "../entities/verificationStatus";
 
 type CreateOnboardingDataKeys = keyof Onboarding;
 
 export default class OnboardingService {
   async getCurrentDriverOnboardingInfo(accountId: string, roles: string[], dryRun = false): Promise<Onboarding | {}> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     const data = await onboarding.findOne({ account: accountId }).lean<Onboarding>().exec();
 
@@ -46,10 +52,12 @@ export default class OnboardingService {
   }
 
   async getApplicationById(id: string, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     const data = await onboarding.findById(id).populate("account").lean<Onboarding>().exec();
 
@@ -66,16 +74,17 @@ export default class OnboardingService {
       page: "1",
     }
   ): Promise<PaginatedDocument<Onboarding[]>> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
-    let queries: {$and?: any[] } = {};
-
+    let queries: { $and?: any[] } = {};
 
     if (filters?.vehicleId) {
-      queries = {...queries, $and: [...(queries?.$and ?? [])] };
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
       queries?.$and!.push({ "vehicleInfo.vehicle": filters.vehicleId });
     }
 
@@ -85,37 +94,50 @@ export default class OnboardingService {
       populate: ["account"],
       sort: {
         updatedAt: -1,
-      }
+      },
     });
   }
 
   async getApplicationStatus(accountId: string, roles: string[], dryRun = false): Promise<{ level1: boolean; level2: boolean } | {}> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
-    const data = await onboarding.findOne({ account: accountId }).lean<Onboarding>().exec();
+    // const data = await onboarding.findOne({ account: accountId }).lean<Onboarding>().exec();
+    const verStat = await verificationStatus.findOne({ account: accountId }).lean<VerificationStatus>().exec();
 
-    if (!dryRun && !data) throw createError("Application not found", 404);
-    if (dryRun && !data) return {};
+    if (!dryRun && !verStat) throw createError("Application not found", 404);
+    if (dryRun && !verStat) return {};
 
-    const level1 = !!(data?.biodata && data?.documents && data?.guarantorInfo && data?.payment);
+    // const level1 = !!(data?.biodata && data?.documents && data?.guarantorInfo && data?.payment);
+    const level1 =
+      verStat?.nin?.status === EVerificationStatus.VERIFIED && verStat?.driversLicense?.status === EVerificationStatus.VERIFIED;
 
-    const level2 =
-      data?.biodata?.status === ApplicationStatusEnum.VERIFIED &&
-      data?.documents?.status === ApplicationStatusEnum.VERIFIED &&
-      data?.guarantorInfo?.status === ApplicationStatusEnum.VERIFIED &&
-      data?.payment?.status === ApplicationStatusEnum.VERIFIED;
+    // const level2 =
+    //   data?.biodata?.status === ApplicationStatusEnum.VERIFIED &&
+    //   data?.documents?.status === ApplicationStatusEnum.VERIFIED &&
+    //   data?.guarantorInfo?.status === ApplicationStatusEnum.VERIFIED &&
+    //   data?.payment?.status === ApplicationStatusEnum.VERIFIED;
+
+    const level2 = verStat.address?.status === EVerificationStatus.VERIFIED;
 
     return { level1, level2 };
   }
 
   async createBiodata(accountId: string, input: BiodataDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
+
+    await Promise.all([
+      VerifyMeService.checkAndValidateNiN(accountId, input),
+      VerifyMeService.checkAndValidateDriversLicense(accountId, input),
     ]);
 
     const result = await OnboardingService.createOrUpdateData("biodata", accountId, input);
@@ -123,11 +145,12 @@ export default class OnboardingService {
   }
 
   async createDocumentUpload(accountId: string, input: DocumentUploadDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const documents = await OnboardingService.createOrUpdateData("documents", accountId, input);
     return documents;
@@ -144,11 +167,12 @@ export default class OnboardingService {
   ): Promise<Onboarding> {
     validateFields(input, ["duration", "initialDeposit"]);
 
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     if (!(await VehicleService.checkVehicleExists(vehicleId, { isAssigned: false }))) throw createError("Vehicle not found", 404);
 
@@ -174,11 +198,12 @@ export default class OnboardingService {
   }
 
   async addGuarantors(accountId: string, input: AddGuarantorsDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const data = await onboarding
       .findOneAndUpdate({ account: accountId }, { guarantorInfo: { guarantors: input.guarantors } }, { new: true })
@@ -189,18 +214,24 @@ export default class OnboardingService {
   }
 
   async updateApplicationStatus(accountId: string, input: UpdateApplicationStatusDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.ALL]
+    );
 
     const documents = await OnboardingService.createOrUpdateData("applicationStatus", accountId, input);
     return documents;
   }
 
   async createHirePurchaseContract(accountId: string, input: HirePurchaseContractDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const documents = await OnboardingService.createOrUpdateData("hirePurchaseContract", accountId, input);
     return documents;
@@ -216,10 +247,12 @@ export default class OnboardingService {
     },
     roles: string[]
   ): Promise<(IPaystackInitTransactionResponse | TransactionReference) | Onboarding["payment"]> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [
-      PermissionScope.CREATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.CREATE, PermissionScope.ALL]
+    );
 
     const [application, payItem] = await Promise.all([
       await onboarding.findOne({ account: accountId }).lean<Onboarding>().exec(),
@@ -313,16 +346,20 @@ export default class OnboardingService {
   }
 
   async approveApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
-
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.ALL]
+    );
 
     let application = await onboarding.findById(id).lean<Onboarding>().exec();
     if (!application) throw createError("Application not found", 404);
     if (application && !application?.payment?.paid) throw createError("Application fee has not been paid", 400);
 
-    if(application.status === ApplicationStatusEnum.VERIFIED) return application;
+    if (application.status === ApplicationStatusEnum.VERIFIED) return application;
 
-     application = await onboarding
+    application = await onboarding
       .findByIdAndUpdate(id, { status: ApplicationStatusEnum.VERIFIED }, { new: true })
       .lean<Onboarding>()
       .exec();
@@ -356,22 +393,31 @@ export default class OnboardingService {
     return application;
   }
 
-  async declineApplication(sub: string, id: string, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ONBOARDING, [PermissionScope.ALL]);
+  async declineApplication(sub: string, id: string, input: DeclineApplicationDto, roles: string[]): Promise<Onboarding> {
+    validateFields(input, ["canReapply", "rejectionReason"]);
+
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ONBOARDING,
+      [PermissionScope.ALL]
+    );
     const app = await onboarding.findById(id).lean<Onboarding>().exec();
 
     if (!app) throw createError("Application not found", 404);
     if (app && !app?.payment?.paid) throw createError("Application fee has not been paid", 400);
 
     const [applic, _] = await Promise.all([
-      onboarding.findByIdAndUpdate(id, { status: ApplicationStatusEnum.DECLINED }, { new: true }).lean<Onboarding>().exec(),
+      onboarding
+        .findByIdAndUpdate(id, { status: ApplicationStatusEnum.DECLINED, ...input }, { new: true })
+        .lean<Onboarding>()
+        .exec(),
 
       RapydBus.emit("application:declined", { owner: app?.account as string, modifier: sub }),
     ]);
 
     return applic;
   }
-
 
   // static async exists(value: any, key = "_id") {
   //   return Boolean()

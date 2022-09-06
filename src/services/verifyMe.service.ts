@@ -1,8 +1,17 @@
 import consola from "consola";
 import configs from "../config";
-import { makeRequest, validateFields } from "../utils";
-import { VerifyAddressDto, VerifyBvnDto, VerifyDriversLicenseDto, VerifyMeRoute, VerifyNinDto } from "../interfaces/dtos";
-import { VerifyBvnRo, VerifyDriversLicenseRo, VerifyNiNRo } from "interfaces/ros";
+import { createError, getUpdateOptions, makeRequest, validateFields } from "../utils";
+import { BiodataDto, VerifyAddressDto, VerifyBvnDto, VerifyDriversLicenseDto, VerifyMeRoute, VerifyNinDto } from "../interfaces/dtos";
+import { VerifyAddressRo, VerifyBvnRo, VerifyDriversLicenseRo, VerifyNiNRo } from "../interfaces/ros";
+import { Account, account, verificationStatus, VerificationStatus } from "../entities";
+import { format, isEqual as isDateEqual } from "date-fns";
+import { isEqual } from "lodash";
+import { EVerificationStatus } from "../entities/verificationStatus";
+
+const toGender = (value: string) => {
+  if (!value.toLowerCase().split("").includes("f")) return "male";
+  else return "female";
+};
 
 export default class VerifyMeService {
   static async verifyNiN(input: VerifyNinDto) {
@@ -45,8 +54,8 @@ export default class VerifyMeService {
   }
 
   static async verifyAddress(input: VerifyAddressDto) {
-    validateFields(input, ["applicant", "landmark", "lga", "state", "street"]);
-    const res = await makeRequest<VerifyAddressDto, any>({
+    validateFields(input, ["applicant", "lga", "state", "street"]);
+    const res = await makeRequest<VerifyAddressDto, VerifyAddressRo["data"]>({
       data: input,
       method: "POST",
       url: `https://vapi.verifyme.ng/v1/verifications/addresses/`,
@@ -71,7 +80,85 @@ export default class VerifyMeService {
     return url;
   }
 
-  static async checkVerification(res: any) {
+  static async checkVerification(res: VerifyAddressRo) {
     console.log("Verification Check", res);
+    switch (res.type) {
+      case "address":
+        // something here
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  static async checkAndValidateNiN(accountId: string, biodata: BiodataDto): Promise<VerificationStatus> {
+    const { dob, sex } = biodata.personalInfo;
+    const { nin } = biodata.securityQuestions;
+
+    const gender = toGender(sex);
+
+    const acc = await account.findById(accountId).select(["firstName", "lastName"]).lean<Account>().exec();
+    if (!acc) throw createError("Account not found", 404);
+    const ninInfo = await VerifyMeService.verifyNiN({
+      firstname: acc?.firstName,
+      lastname: acc?.lastName,
+      dob: format(dob, "dd-MM-yyyy"),
+      nin,
+    });
+
+    const match: Omit<VerificationStatus["nin"], "status" | "_id"> = {
+      ninValue: nin,
+      firstname: isEqual(acc?.firstName, ninInfo.firstname),
+      lastname: isEqual(acc?.lastName, ninInfo.lastname),
+      nin: isEqual(nin, ninInfo.nin),
+      dob: isDateEqual(dob, new Date(ninInfo.birthdate)),
+      gender: isEqual(gender, toGender(ninInfo.gender as string)),
+    };
+
+    const isValid = match.firstname && match.lastname && match.dob && match.gender && match.nin;
+    return await verificationStatus
+      .findOneAndUpdate(
+        { account: accountId },
+        { nin: match, status: isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED },
+        getUpdateOptions()
+      )
+      .lean<VerificationStatus>()
+      .exec();
+  }
+
+  static async checkAndValidateDriversLicense(accountId: string, biodata: BiodataDto): Promise<VerificationStatus> {
+    const { dob, sex } = biodata.personalInfo;
+    const { licenseNo } = biodata.securityQuestions;
+
+    const gender = toGender(sex);
+
+    const acc = await account.findById(accountId).select(["firstName", "lastName"]).lean<Account>().exec();
+    if (!acc) throw createError("Account not found", 404);
+    const licenseInfo = await VerifyMeService.verifyDriversLicense({
+      firstname: acc?.firstName,
+      lastname: acc?.lastName,
+      dob: format(dob, "dd-MM-yyyy"),
+      licenseNo,
+    });
+
+    const match: Omit<VerificationStatus["driversLicense"], "status" | "_id"> = {
+      licenseNoValue: licenseNo,
+      firstname: isEqual(acc?.firstName, licenseInfo.firstname),
+      lastname: isEqual(acc?.lastName, licenseInfo.lastname),
+      licenseNo: isEqual(licenseNo, licenseInfo.licenseNo),
+      dob: isDateEqual(dob, new Date(licenseInfo.birthdate)),
+      gender: isEqual(gender, toGender(licenseInfo.gender as string)),
+    };
+
+    const isValid = match.firstname && match.lastname && match.dob && match.gender && match.licenseNo;
+    return await verificationStatus
+      .findOneAndUpdate(
+        { account: accountId },
+        { driversLicense: match, status: isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED },
+        getUpdateOptions()
+      )
+      .lean<VerificationStatus>()
+      .exec();
   }
 }

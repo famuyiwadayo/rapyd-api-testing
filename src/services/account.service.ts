@@ -47,10 +47,12 @@ export default class AccountService {
   async getOnlineOfflineVehicleStat(
     roles: string[]
   ): Promise<{ activeVehicles: number; inactiveVehicles: number; onlineVehicles: number; offlineVehicles: number }> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     const toRun: any[] = [
       account.countDocuments({ "vehicleInfo.vehicleStatus": VehicleStatus.ACTIVE, primaryRole: "driver" }).exec(),
@@ -70,10 +72,12 @@ export default class AccountService {
   }
 
   async getVehicleStatusAnalysis(roles: string[], filter?: { date?: Date }) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     let dateFilter: any = {};
     if (filter && filter?.date) {
@@ -91,7 +95,13 @@ export default class AccountService {
 
   async addBank(sub: string, input: AddBankDto, roles: string[]): Promise<BankInfo> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.ACCOUNTS_ADMIN,
+        AvailableRole.FLEET_MANAGER,
+      ],
       roles,
       AvailableResource.ACCOUNT,
       [PermissionScope.UPDATE, PermissionScope.ALL]
@@ -99,14 +109,13 @@ export default class AccountService {
 
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
 
-
-    const result = await bankInfo.findOneAndUpdate({account: sub}, {...input}, getUpdateOptions()).lean<BankInfo>().exec();
-    if(!result) throw createError("Unable to add bank info", 403);
-
-    await account
-      .findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true })
-      .lean<Account>()
+    const result = await bankInfo
+      .findOneAndUpdate({ account: sub }, { ...input }, getUpdateOptions())
+      .lean<BankInfo>()
       .exec();
+    if (!result) throw createError("Unable to add bank info", 403);
+
+    await account.findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true }).lean<Account>().exec();
 
     await RapydBus.emit("account:bank:added", { owner: sub });
     return result;
@@ -114,23 +123,27 @@ export default class AccountService {
 
   async updateBank(sub: string, input: Partial<AddBankDto>, roles: string[]): Promise<BankInfo> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.ACCOUNTS_ADMIN,
+        AvailableRole.FLEET_MANAGER,
+      ],
       roles,
       AvailableResource.ACCOUNT,
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
 
-
-    const result = await bankInfo.findOneAndUpdate({account: sub}, {...input}, getUpdateOptions()).lean<BankInfo>().exec();
-    if(!result) throw createError("Unable to add bank info", 403);
-
-    await account
-      .findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true })
-      .lean<Account>()
+    const result = await bankInfo
+      .findOneAndUpdate({ account: sub }, { ...input }, getUpdateOptions())
+      .lean<BankInfo>()
       .exec();
+    if (!result) throw createError("Unable to add bank info", 403);
+
+    await account.findByIdAndUpdate(sub, { bankInfo: result?._id }, { new: true }).lean<Account>().exec();
 
     await RapydBus.emit("account:bank:added", { owner: sub });
     return result;
@@ -138,19 +151,24 @@ export default class AccountService {
 
   async deleteBankInfo(sub: string, roles: string[]): Promise<Account> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.ACCOUNTS_ADMIN,
+        AvailableRole.FLEET_MANAGER,
+      ],
       roles,
       AvailableResource.ACCOUNT,
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    if((await bankInfo.countDocuments({account: sub}).exec()) < 1) throw createError("Bank info not found", 404)
+    if ((await bankInfo.countDocuments({ account: sub }).exec()) < 1) throw createError("Bank info not found", 404);
     if (!(await AccountService.checkAccountExists(sub))) throw createError("Account not found", 404);
 
-    await bankInfo.deleteOne({account: sub}).exec();
+    await bankInfo.deleteOne({ account: sub }).exec();
 
     await RapydBus.emit("account:bank:removed", { owner: sub });
-
 
     return await account.findByIdAndUpdate(sub, { bankInfo: null }, { new: true }).lean<Account>().exec();
   }
@@ -166,10 +184,12 @@ export default class AccountService {
       page: "1",
     }
   ): Promise<PaginatedDocument<Account[]>> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     let queries: { $and?: any[] } = {};
 
@@ -192,9 +212,11 @@ export default class AccountService {
     }
 
     // console.log(JSON.stringify(queries));
-    return await paginate("account", queries, filters, {sort: {
-      updatedAt: -1
-    }});
+    return await paginate("account", queries, filters, {
+      sort: {
+        updatedAt: -1,
+      },
+    });
   }
 
   async updatePrimaryRole(id: string, role: string, roles: string[], dryRun = true): Promise<Account> {
@@ -216,10 +238,12 @@ export default class AccountService {
 
     if (!Object.values(VehicleStatus).includes(input.status)) throw createError("Vehicle status not supported", 400);
 
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     let acc = await account.findById(accountId).lean<Account>().exec();
     if (!acc) throw createError("Account not found", 404);
@@ -250,14 +274,16 @@ export default class AccountService {
   async accountById(id: string, roles: string[]) {
     const toRun = [
       AccountService.removeDeprecatedAccountRoles(id, roles),
-      RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
-        PermissionScope.READ,
-        PermissionScope.ALL,
-      ]),
+      RoleService.requiresPermission(
+        [AvailableRole.SUPERADMIN, , AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+        roles,
+        AvailableResource.ACCOUNT,
+        [PermissionScope.READ, PermissionScope.ALL]
+      ),
     ];
     await Promise.all(toRun);
 
-    let data = await account.findById(id).populate('bankInfo').lean().exec();
+    let data = await account.findById(id).populate("bankInfo").lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
       data = await account
@@ -272,7 +298,13 @@ export default class AccountService {
     const toRun = [
       AccountService.removeDeprecatedAccountRoles(id, roles),
       RoleService.requiresPermission(
-        [AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.SUPERADMIN],
+        [
+          AvailableRole.DRIVER,
+          AvailableRole.MODERATOR,
+          AvailableRole.SUPERADMIN,
+          AvailableRole.ACCOUNTS_ADMIN,
+          AvailableRole.FLEET_MANAGER,
+        ],
         roles,
         AvailableResource.ACCOUNT,
         [PermissionScope.READ, PermissionScope.ALL]
@@ -280,7 +312,7 @@ export default class AccountService {
     ];
     await Promise.all(toRun);
 
-    let data = await account.findById(id).populate(['bankInfo']).lean().exec();
+    let data = await account.findById(id).populate(["bankInfo"]).lean().exec();
     if (!data) throw createError(`Not found`, 404);
     if (!data?.refCode)
       data = await account
@@ -312,10 +344,12 @@ export default class AccountService {
   }
 
   async deleteAccount(sub: string, id: string, roles: string[]) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.DELETE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
     const data = await account.findOneAndDelete({ _id: id }, { new: true }).lean<Account>().exec();
     if (!data) throw createError(`Not found`, 404);
     await RapydBus.emit("account:deleted", { owner: data, modifier: sub });
@@ -323,10 +357,12 @@ export default class AccountService {
   }
 
   async disableAccount(sub: string, id: string, roles: string[]) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.DISABLE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.DISABLE, PermissionScope.ALL]
+    );
     const data = await account
       .findOneAndUpdate({ _id: id }, { control: { enabled: false } })
       .lean<Account>()
@@ -338,10 +374,12 @@ export default class AccountService {
   }
 
   async enableAccount(sub: string, id: string, roles: string[]) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.ENABLE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.ENABLE, PermissionScope.ALL]
+    );
     const data = await account
       .findOneAndUpdate({ _id: id }, { control: { enabled: true } })
       .lean<Account>()

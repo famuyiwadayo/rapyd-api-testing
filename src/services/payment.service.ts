@@ -21,6 +21,7 @@ import OnboardingService from "./onboarding.service";
 import FinanceService from "./finance.service";
 import LoanService from "./loan.service";
 import AccountService from "./account.service";
+// import { isEmpty, omit, pick } from "lodash";
 
 export default class PaymentService {
   public async initTransaction(
@@ -88,6 +89,7 @@ export default class PaymentService {
 
     if (input.for === PaymentItemFor.ONBOARDING_PAYMENT) validateFields(input, ["amount", "for"]);
     if (input.for === PaymentItemFor.BANK_TRANSFER) validateFields(input, ["bankName", "accountName", "accountNumber"]);
+    if (input.for === PaymentItemFor.VEHICLE_INTEREST) validateFields(input, ["duration", "apr"]);
 
     const supportedValues = Object.values(PaymentItemFor);
     if (!supportedValues.includes(input.for))
@@ -98,13 +100,31 @@ export default class PaymentService {
       PermissionScope.ALL,
     ]);
 
+    // input = omit(input, 'interest') as any;
+    let where: any = { for: input.for };
+    switch (input.for) {
+      case PaymentItemFor.VEHICLE_INTEREST:
+        Object.assign(where, { duration: input.duration });
+        break;
+      default:
+        break;
+    }
+
     const _payItem = await paymentItem
-      .findOneAndUpdate({ for: input.for }, { ...input }, getUpdateOptions())
+      .findOneAndUpdate(where, { ...input }, getUpdateOptions())
       .lean<PaymentItem>()
       .exec();
 
     if (!dryRun && !_payItem) throw createError("Unable to add payment item", 400);
     return _payItem;
+  }
+
+  static async getAPR(duration: string | number, validate = true): Promise<number> {
+    const result = await paymentItem.findOne({ for: PaymentItemFor.VEHICLE_INTEREST, duration }).lean<PaymentItem>().exec();
+    if (validate && !result) {
+      throw createError(`Vehicle Interest payment item for ${duration} not found, please contact the administrator`, 404);
+    }
+    return result.apr ?? 0;
   }
 
   public async updatePaymentItem(
@@ -257,10 +277,12 @@ export default class PaymentService {
     validateFields(input, ["account", "reference", "receipt"]);
     const { account, reference, receipt } = input;
 
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.PAYMENT_ITEM, [
-      PermissionScope.APPROVE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.PAYMENT_ITEM,
+      [PermissionScope.APPROVE, PermissionScope.ALL]
+    );
 
     const check = Boolean(
       await transactionReference.countDocuments({ account, reference, bankTransferProof: receipt, used: false }).exec()
@@ -280,10 +302,12 @@ export default class PaymentService {
     validateFields(input, ["reference"]);
     const { reference } = input;
 
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.PAYMENT_ITEM, [
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.PAYMENT_ITEM,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const txRef = await new TransactionReferenceService().updateTransactionReference(reference, {
       status: TransactionReferenceStatus.DECLINED,

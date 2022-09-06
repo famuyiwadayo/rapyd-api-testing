@@ -46,13 +46,18 @@ export default class VehicleService {
       searchPhrase?: string;
       mileage?: string;
       assigned?: boolean;
-      
     },
     dryRun?: boolean
   ): Promise<PaginatedDocument<Vehicle[]>> {
     if (!dryRun)
       await RoleService.requiresPermission(
-        [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+        [
+          AvailableRole.SUPERADMIN,
+          AvailableRole.DRIVER,
+          AvailableRole.MODERATOR,
+          AvailableRole.FLEET_MANAGER,
+          AvailableRole.ACCOUNTS_ADMIN,
+        ],
         roles,
         AvailableResource.VEHICLE,
         [PermissionScope.READ, PermissionScope.ALL]
@@ -73,7 +78,7 @@ export default class VehicleService {
 
     // ?color=626797ee8bb9cffc216a2474,626673a78bb9cffc211a69a9&features=626796f48bb9cffc2169e3d0
 
-    let queries: { isAssigned?: boolean; $and?: any[]; $text?: { $search: string } } = { isAssigned: false };
+    let queries: { isAssigned?: boolean; $and?: any[]; $text?: { $search: string } } = { isAssigned: true };
     // let population: any[] = ["color"];
 
     if (filters?.fuelType) {
@@ -149,10 +154,12 @@ export default class VehicleService {
   }
 
   async getTotalVehicleCount(roles: string[], filter?: { date?: string }) {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     let dateFilter: any = {};
     if (filter && filter?.date) {
@@ -171,7 +178,13 @@ export default class VehicleService {
 
   async getAvailableVehicleMakes(roles: string[]) {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -184,7 +197,13 @@ export default class VehicleService {
     if (!make) throw createError("make param is required", 400);
 
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -197,7 +216,13 @@ export default class VehicleService {
 
   async getVehicleById(vehicleId: string, roles: string[]): Promise<Vehicle> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -209,10 +234,12 @@ export default class VehicleService {
   }
 
   async getAssignedVehicleAnalysis(roles: string[]): Promise<{ assigned: number; unassigned: number }> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.ACCOUNT, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.ACCOUNT,
+      [PermissionScope.READ, PermissionScope.ALL]
+    );
 
     const [assigned, unassigned] = await Promise.all([
       vehicle.countDocuments({ isAvailable: true, isAssigned: true }).exec(),
@@ -224,7 +251,13 @@ export default class VehicleService {
 
   async getSimilarVehicles(vehicleId: string, roles: string[]): Promise<Vehicle[]> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -250,7 +283,13 @@ export default class VehicleService {
 
   async getVehicleColors(roles: string[]): Promise<VehicleColor[]> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -260,7 +299,13 @@ export default class VehicleService {
 
   async getVehicleTypes(roles: string[]): Promise<VehicleType[]> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -270,7 +315,13 @@ export default class VehicleService {
 
   async getVehicleFeatures(roles: string[]): Promise<VehicleFeature[]> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [
+        AvailableRole.SUPERADMIN,
+        AvailableRole.DRIVER,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ],
       roles,
       AvailableResource.VEHICLE,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -279,10 +330,12 @@ export default class VehicleService {
   }
 
   async createVehicle(input: CreateVehicleDto, roles: string[]): Promise<Vehicle> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.CREATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.CREATE, PermissionScope.ALL]
+    );
 
     if (input?.images && typeof input.images[0] === "string")
       input.images = VehicleService.transformImageStrings(input?.images as string[]);
@@ -296,14 +349,12 @@ export default class VehicleService {
 
   async createVehicleColor(input: CreateVehicleColorDto, roles: string[]): Promise<VehicleColor> {
     validateFields(input, ["color"]);
-
     const slug = createSlug(input?.color);
     return (await VehicleService.createOrUpdateVehicleProperty("vehicleColor", slug, input, roles)) as VehicleColor;
   }
 
   async createVehicleType(input: CreateVehicleTypeDto, roles: string[]): Promise<VehicleType> {
     validateFields(input, ["name"]);
-
     const slug = createSlug(input?.name);
     return (await VehicleService.createOrUpdateVehicleProperty("vehicleType", slug, input, roles)) as VehicleType;
   }
@@ -315,10 +366,12 @@ export default class VehicleService {
   }
 
   async updateVehicle(vehicleId: string, input: UpdateVehicleDto, roles: string[]): Promise<Vehicle> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     if (input.deleteImages && !isEmpty(input?.deleteImages)) {
       await VehicleService.removeVehicleImages(vehicleId, input.deleteImages);
@@ -380,10 +433,12 @@ export default class VehicleService {
   }
 
   async deleteVehicle(vehicleId: string, roles: string[]): Promise<Vehicle> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.DELETE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
 
     const _vehicle = await vehicle.findByIdAndDelete(vehicleId).lean<Vehicle>().exec();
     if (!_vehicle) throw createError("Vehicle not found", 404);
@@ -391,10 +446,12 @@ export default class VehicleService {
   }
 
   async deleteVehicleType(vehicleTypeId: string, roles: string[]): Promise<VehicleType> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.DELETE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
 
     const _vehicleType = await vehicleType.findByIdAndDelete(vehicleTypeId).lean<VehicleType>().exec();
     if (!_vehicleType) throw createError("Vehicle type not found", 404);
@@ -402,10 +459,12 @@ export default class VehicleService {
   }
 
   async deleteVehicleColor(vehicleColorId: string, roles: string[]): Promise<VehicleColor> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.DELETE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
 
     const _vehicleColor = await vehicleColor.findByIdAndDelete(vehicleColorId).lean<VehicleColor>().exec();
     if (!_vehicleColor) throw createError("Vehicle color not found", 404);
@@ -413,10 +472,12 @@ export default class VehicleService {
   }
 
   async deleteVehicleFeature(vehicleFeatureId: string, roles: string[]): Promise<VehicleFeature> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.DELETE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.DELETE, PermissionScope.ALL]
+    );
 
     const _vehicleFeature = await vehicleFeature.findByIdAndDelete(vehicleFeatureId).lean<VehicleFeature>().exec();
     if (!_vehicleFeature) throw createError("Vehicle feature not found", 404);
@@ -475,11 +536,12 @@ export default class VehicleService {
     input: T,
     roles: string[]
   ): Promise<VehicleColor | VehicleFeature> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN], roles, AvailableResource.VEHICLE, [
-      PermissionScope.CREATE,
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.VEHICLE,
+      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const _property = await AccessService.getModel(entity)
       .findOneAndUpdate({ slug }, { ...input }, getUpdateOptions())

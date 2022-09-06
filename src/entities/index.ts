@@ -50,3 +50,4 @@ export { default as notification, Notification, NotificationType } from "./notif
 
 export { default as bankInfo, BankInfo } from "./bankInfo";
 
+export { default as verificationStatus, VerificationStatus } from "./verificationStatus";

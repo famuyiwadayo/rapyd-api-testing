@@ -1,10 +1,4 @@
-import {
-  ApplicationStatus,
-  Biodata,
-  DocumentUpload,
-  Guarantor,
-  HirePurchaseContract,
-} from "../../entities";
+import { ApplicationStatus, Biodata, DocumentUpload, Guarantor, HirePurchaseContract } from "../../entities";
 
 export interface BiodataDto extends Biodata {}
 
@@ -17,4 +11,9 @@ export interface UpdateApplicationStatusDto extends ApplicationStatus {}
 export interface ApplicationStatusDto extends ApplicationStatus {}
 export interface AddGuarantorsDto {
   guarantors: Guarantor[];
+}
+
+export interface DeclineApplicationDto {
+  rejectionReason: string;
+  canReapply: boolean;
 }

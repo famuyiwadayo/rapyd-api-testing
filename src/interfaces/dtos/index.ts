@@ -5,7 +5,7 @@ export { addPermissionDto } from "./role.dto";
 
 // export type { RedeemEarningsDto } from "./earning.dto";
 
-export type { BiodataDto, DocumentUploadDto, AddGuarantorsDto, ApplicationStatusDto } from "./onboarding.dto";
+export type { BiodataDto, DocumentUploadDto, AddGuarantorsDto, ApplicationStatusDto, DeclineApplicationDto } from "./onboarding.dto";
 
 export type {
   UpdateVehicleDto,

@@ -63,11 +63,11 @@ routes.post("/webhook", async (req, res, _) => {
 
 routes.post("/verifications/webhook", async (req, res, _) => {
   //validate event
-  const hash = crypto.createHmac("sha512", config.VERIFY_ME_KEY).update(JSON.stringify(req.body)).digest("hex");
-  if (hash == req.headers["x-verifyme-signatue"]) {
-    // console.log(req.body);
-    await VerifyMeService.checkVerification(req.body);
-  }
+  // const hash = crypto.createHmac("sha512", config.VERIFY_ME_KEY).update(JSON.stringify(req.body)).digest("hex");
+  // console.log({ body: req.body, hash, signature: req.headers["x-verifyme-signatue"] });
+  // if (hash === req.headers["x-verifyme-signatue"]) {
+  await VerifyMeService.checkVerification(req.body);
+  // }
 
   sendResponse(res, 200, {});
 });

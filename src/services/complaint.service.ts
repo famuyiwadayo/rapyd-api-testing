@@ -1,38 +1,21 @@
 import RoleService from "./role.service";
-import {
-  CreateComplaintDto,
-  CreateComplaintFeedbackDto,
-} from "../interfaces/dtos";
+import { CreateComplaintDto, CreateComplaintFeedbackDto } from "../interfaces/dtos";
 import { PermissionScope } from "../valueObjects";
-import {
-  AvailableResource,
-  AvailableRole,
-  complaint,
-  Complaint,
-  ComplaintFeedback,
-  complaintFeedback,
-} from "../entities";
+import { AvailableResource, AvailableRole, complaint, Complaint, ComplaintFeedback, complaintFeedback } from "../entities";
 import { createError, paginate } from "../utils";
 import { IPaginationFilter, PaginatedDocument } from "interfaces/ros";
 import AccessService from "./access.service";
 
 export default class ComplaintService {
-  async getComplaintById(
-    complaintId: string,
-    roles: string[]
-  ): Promise<Complaint> {
+  async getComplaintById(complaintId: string, roles: string[]): Promise<Complaint> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT,
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const _comp = await complaint
-      .findById(complaintId)
-      .populate("creator")
-      .lean<Complaint>()
-      .exec();
+    const _comp = await complaint.findById(complaintId).populate("creator").lean<Complaint>().exec();
     if (!_comp) throw createError("Complaint not found", 404);
     return _comp;
   }
@@ -42,7 +25,7 @@ export default class ComplaintService {
     filters: IPaginationFilter & { searchPhrase?: string }
   ): Promise<PaginatedDocument<Complaint[]>> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -62,26 +45,18 @@ export default class ComplaintService {
     filters: IPaginationFilter
   ): Promise<PaginatedDocument<ComplaintFeedback[]>> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT_FEEDBACK,
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    return await paginate(
-      "complaintFeedback",
-      { complaint: complaintId },
-      filters
-    );
+    return await paginate("complaintFeedback", { complaint: complaintId }, filters);
   }
 
-  async createComplaint(
-    accountId: string,
-    input: CreateComplaintDto,
-    roles: string[]
-  ): Promise<Complaint> {
+  async createComplaint(accountId: string, input: CreateComplaintDto, roles: string[]): Promise<Complaint> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT,
       [PermissionScope.CREATE, PermissionScope.ALL]
@@ -97,7 +72,7 @@ export default class ComplaintService {
     roles: string[]
   ): Promise<ComplaintFeedback> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT_FEEDBACK,
       [PermissionScope.CREATE, PermissionScope.ALL]
@@ -117,18 +92,14 @@ export default class ComplaintService {
     roles: string[]
   ): Promise<Complaint> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT,
       [PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
     const _complaint = await complaint
-      .findOneAndUpdate(
-        { _id: complaintId, creator: accountId },
-        { ...input },
-        { new: true }
-      )
+      .findOneAndUpdate({ _id: complaintId, creator: accountId }, { ...input }, { new: true })
       .lean<Complaint>()
       .exec();
     if (!_complaint) throw createError("Complaint not found", 404);
@@ -141,7 +112,7 @@ export default class ComplaintService {
     roles: string[]
   ): Promise<ComplaintFeedback> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT_FEEDBACK,
       [PermissionScope.UPDATE, PermissionScope.ALL]
@@ -155,54 +126,31 @@ export default class ComplaintService {
     return _complaint;
   }
 
-  async deleteComplaint(
-    accountId: string,
-    complaintId: string,
-    roles: string[]
-  ): Promise<Complaint> {
+  async deleteComplaint(accountId: string, complaintId: string, roles: string[]): Promise<Complaint> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT,
       [PermissionScope.DELETE, PermissionScope.ALL]
     );
 
-    if (
-      !(await RoleService.hasOneOrMore(
-        [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
-        roles
-      ))
-    )
-      await AccessService.documentBelongsToAccount(
-        accountId,
-        complaintId,
-        "complaint",
-        "creator"
-      );
+    if (!(await RoleService.hasOneOrMore([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles)))
+      await AccessService.documentBelongsToAccount(accountId, complaintId, "complaint", "creator");
 
-    const _complaint = await complaint
-      .findOneAndDelete({ _id: complaintId })
-      .lean<Complaint>()
-      .exec();
+    const _complaint = await complaint.findOneAndDelete({ _id: complaintId }).lean<Complaint>().exec();
     if (!_complaint) throw createError("Complaint not found", 404);
     return _complaint;
   }
 
-  async deleteComplaintFeedback(
-    feedbackId: string,
-    roles: string[]
-  ): Promise<ComplaintFeedback> {
+  async deleteComplaintFeedback(feedbackId: string, roles: string[]): Promise<ComplaintFeedback> {
     await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.COMPLAINT_FEEDBACK,
       [PermissionScope.DELETE, PermissionScope.ALL]
     );
 
-    const _feedback = await complaintFeedback
-      .findByIdAndDelete(feedbackId)
-      .lean<ComplaintFeedback>()
-      .exec();
+    const _feedback = await complaintFeedback.findByIdAndDelete(feedbackId).lean<ComplaintFeedback>().exec();
     if (!_feedback) throw createError("Complaint not found", 404);
     return _feedback;
   }

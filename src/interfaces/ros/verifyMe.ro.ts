@@ -36,32 +36,35 @@ export interface VerifyDriversLicenseRo extends GenericVerifyRo {
 }
 
 export interface VerifyAddressRo {
-  id: number;
-  applicant: {
-    firstname: string;
-    lastname: string;
-    phone: string;
-    idType: string;
-    idNumber: string;
-    middlename: string;
-    photo: string;
-    gender: string;
-    birthdate: string;
+  type: "address";
+  data: {
+    id: number;
+    applicant: {
+      firstname: string;
+      lastname: string;
+      phone: string;
+      idType: string;
+      idNumber: string;
+      middlename: string;
+      photo: string;
+      gender: string;
+      birthdate: string;
+    };
+    createdAt: string;
+    lattitude: string;
+    longitude: string;
+    photos: [];
+    neighbor: {};
+    status: {
+      status: "IN PROGRESS" | "COMPLETED" | "VERIFIED";
+      subStatus: "IN PROGRESS" | "COMPLETED" | "VERIFIED";
+      state: "IN_PROGRESS" | "COMPLETED" | "VERIFIED";
+    };
+    city: string;
+    street: string;
+    lga: string;
+    state: string;
+    country: string;
+    reference: string;
   };
-  createdAt: string;
-  lattitude: string;
-  longitude: string;
-  photos: [];
-  neighbor: {};
-  status: {
-    status: "IN PROGRESS" | "COMPLETED" | "VERIFIED";
-    subStatus: "IN PROGRESS" | "COMPLETED" | "VERIFIED";
-    state: "IN_PROGRESS" | "COMPLETED" | "VERIFIED";
-  };
-  city: string;
-  street: string;
-  lga: string;
-  state: string;
-  country: string;
-  reference: string;
 }

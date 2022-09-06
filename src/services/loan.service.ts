@@ -20,7 +20,7 @@ export default class LoanService {
     }
   ): Promise<PaginatedDocument<Loan[]>> {
     await RoleService.requiresPermission(
-      [AvailableRole.DRIVER, AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.DRIVER, AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
       roles,
       AvailableResource.LOAN,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -56,7 +56,7 @@ export default class LoanService {
 
   async getLoanById(sub: string, loanId: string, roles: string[]): Promise<Loan> {
     await RoleService.requiresPermission(
-      [AvailableRole.DRIVER, AvailableRole.SUPERADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.DRIVER, AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
       roles,
       AvailableResource.LOAN,
       [PermissionScope.READ, PermissionScope.ALL]
@@ -139,10 +139,12 @@ export default class LoanService {
   }
 
   static async updateLoanStatus(loanId: string, roles: string[], status: LoanStatus): Promise<Loan> {
-    await RoleService.requiresPermission([AvailableRole.SUPERADMIN, AvailableRole.MODERATOR], roles, AvailableResource.LOAN, [
-      PermissionScope.UPDATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.requiresPermission(
+      [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.ACCOUNTS_ADMIN],
+      roles,
+      AvailableResource.LOAN,
+      [PermissionScope.UPDATE, PermissionScope.ALL]
+    );
 
     const l = await loan
       .findOneAndUpdate(
@@ -207,8 +209,8 @@ export default class LoanService {
   }
 
   static async getActiveLoan(accId: string) {
-    const _loan = (await loan.findOne({account: accId, status: LoanStatus.APPROVED}).lean<Loan>().exec())
-    if(!loan) return null;
+    const _loan = await loan.findOne({ account: accId, status: LoanStatus.APPROVED }).lean<Loan>().exec();
+    if (!loan) return null;
     return _loan;
   }
 }
