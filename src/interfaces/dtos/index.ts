@@ -27,3 +27,5 @@ export type { RequestLoanDto } from "./loan.dto";
 
 export type { VerifyNinDto, VerifyDriversLicenseDto, VerifyBvnDto, VerifyAddressDto } from "./verifyMe.dto";
 export { VerifyMeRoute } from "./verifyMe.dto";
+
+export * from "./registrationRequest.dto";

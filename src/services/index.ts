@@ -20,3 +20,5 @@ export { default as GuarantorService } from "./guarantor.service";
 export { default as NotificationService } from "./notification.service";
 
 export { default as VerifyMeService } from "./verifyMe.service";
+export { default as RegistrationRequestService } from "./registrationRequest.service";
+export { default as DriverActivityService } from "./activity.service";

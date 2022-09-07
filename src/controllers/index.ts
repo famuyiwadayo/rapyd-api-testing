@@ -14,8 +14,5 @@ export { default as TransactionController } from "./transactions.controller";
 export { default as NotificationController } from "./notification.controller";
 
 export { default as VerifyMeController } from "./verifyMe.controller";
-// export { default as VoteController } from "./vote.controller";
-// export { default as CoinController } from "./coin.controller";
-// export { default as EarningController } from "./earning.controller";
-// export { default as MarketCapController } from "./marketCap.controller";
-// export { default as RegistrationRequestController } from "./registrationRequest.controller";
+export { default as RegistrationRequestController } from "./registrationRequest.controller";
+export { default as DriverActivityController } from "./activity.controller";

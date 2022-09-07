@@ -31,6 +31,7 @@ import GuarantorService from "./guarantor.service";
 import { RapydBus } from "../libs";
 import { OnboardingEventListener } from "../listerners";
 import { EVerificationStatus } from "../entities/verificationStatus";
+import { isMatch } from "date-fns";
 
 type CreateOnboardingDataKeys = keyof Onboarding;
 
@@ -128,12 +129,16 @@ export default class OnboardingService {
   }
 
   async createBiodata(accountId: string, input: BiodataDto, roles: string[]): Promise<Onboarding> {
+    validateFields(input, ["personalInfo", "securityQuestions", "nextOfKin", "background"]);
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
       roles,
       AvailableResource.ONBOARDING,
       [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
     );
+
+    if (!isMatch(input.personalInfo.dob as string, "dd-MM-yyyy") || !isMatch(input.nextOfKin.dob as string, "dd-MM-yyyy"))
+      throw createError("Date of birth should have the format: dd-mm-yyyy");
 
     await Promise.all([
       VerifyMeService.checkAndValidateNiN(accountId, input),
@@ -322,7 +327,7 @@ export default class OnboardingService {
   protected static async createOrUpdateData<T>(key: CreateOnboardingDataKeys, accountId: string, input: T): Promise<Onboarding> {
     input = removeForcedInputs(input as any, ["status"]);
 
-    console.log(input);
+    // console.log(input);
     let data = await onboarding.findOne({ account: accountId }).select([key, "rapydId"]).lean<Onboarding>().exec();
 
     const rId = {

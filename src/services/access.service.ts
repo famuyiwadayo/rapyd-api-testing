@@ -15,6 +15,8 @@ import {
   notification,
   complaintFeedback,
   transactionReference,
+  registrationRequest,
+  driverActivity,
 } from "../entities";
 
 import capitalize from "lodash/capitalize";
@@ -34,7 +36,9 @@ export type SchemaTypes =
   | "complaintFeedback"
   | "transactionReference"
   | "notification"
-  | "servicing";
+  | "servicing"
+  | "driverActivity"
+  | "registrationRequest";
 
 export default class AccessService {
   static async documentBelongsToAccount(accountId: string, docId: string, schema: SchemaTypes, key?: string): Promise<boolean> {
@@ -63,6 +67,8 @@ export default class AccessService {
       notification,
       complaintFeedback,
       transactionReference,
+      registrationRequest,
+      driverActivity,
     };
 
     return map[schema];

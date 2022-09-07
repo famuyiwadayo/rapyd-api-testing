@@ -15,9 +15,10 @@ import GuarantorRouter from "./guarantor.routes";
 import TransactionRouter from "./transactions.routes";
 import EmailRouter from "./email.routes";
 import NotificationRouter from "./notification.routes";
+import ActivityRouter from "./activity.routes";
 
 import VerifyMeRouter from "./verifyMe.routes";
-// import RegistrationRequestRouter from "./registrationRequest.routes";
+import RegistrationRequestRouter from "./registrationRequest.routes";
 
 import { sendResponse } from "../utils";
 import config from "../config";
@@ -39,12 +40,13 @@ routes.use("/services", ServicingRouter);
 routes.use("/guarantors", GuarantorRouter);
 routes.use("/transactions", TransactionRouter);
 routes.use("/notifications", NotificationRouter);
+routes.use("/activities", ActivityRouter);
 
 routes.use("/emails", EmailRouter);
 
 routes.use("/verify", VerifyMeRouter);
 
-// routes.use("/registrations", RegistrationRequestRouter);
+routes.use("/registrations", RegistrationRequestRouter);
 
 routes.get("/healthcheck", (_, res, __) => {
   sendResponse(res, 200, { message: "OK" });

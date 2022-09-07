@@ -158,6 +158,14 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.NOTIFICATION,
         scopes: [PermissionScope.ALL],
       },
+      {
+        name: AvailableResource.REGISTRATION_REQUEST,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.ACTIVITY,
+        scopes: [PermissionScope.ALL],
+      },
     ],
   },
   fleet_manager: {

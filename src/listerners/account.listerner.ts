@@ -1,6 +1,6 @@
 import { RapydEventTypes } from "../libs";
 import { addEvent } from "../decorators";
-import { NotificationService } from "../services";
+import { DriverActivityService, NotificationService } from "../services";
 import { log } from "../utils";
 
 import join from "lodash/join";
@@ -11,6 +11,25 @@ export default class AccountEventListerner {
     const message = `👏 Your account has been created, proceed to verify your account.`;
     const note = await NotificationService.create({ message, display: true, owner, resource: "account", event: "account:created" });
     log("🚀 Notifications", `Sent ( ${message} ) to account:${note._id}`);
+  }
+
+  @addEvent("account:logged_in")
+  static async OnAccountLogged_in({ owner }: RapydEventTypes["account:logged_in"]) {
+    const name = join([owner?.firstName, owner?.lastName], " ");
+    const message = `${name} logged in into their account`;
+    await Promise.all([
+      DriverActivityService.logActivity(owner?._id!, message, new Date()),
+      NotificationService.create({
+        message,
+        display: true,
+        owner,
+        resource: "account",
+        event: "account:logged_in",
+        isAdmin: true,
+      }),
+    ]);
+
+    log("🚀 Notifications", `Sent ( ${message} ) to admins`);
   }
 
   @addEvent("account:tested")
@@ -47,7 +66,7 @@ export default class AccountEventListerner {
 
   @addEvent("account:password:changed")
   static async OnAccountPasswordChanged({ owner }: RapydEventTypes["account:password:changed"]) {
-    const message = `🫀 You changed account password.`;
+    const message = `🫀 You changed your account password.`;
     const note = await NotificationService.create({
       message,
       display: true,
@@ -61,7 +80,7 @@ export default class AccountEventListerner {
   @addEvent("account:deleted")
   static async OnAccountDeleted({ owner, modifier }: RapydEventTypes["account:deleted"]) {
     const admin = await NotificationService.getAccount(modifier as string);
-    const message = `🥶 Admin (${admin?.name}) deleted ${join([owner?.firstName, owner?.lastName], ' ')}'s account`;
+    const message = `🥶 Admin (${admin?.name}) deleted ${join([owner?.firstName, owner?.lastName], " ")}'s account`;
     const note = await NotificationService.create({
       message,
       display: true,

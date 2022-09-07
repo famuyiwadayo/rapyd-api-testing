@@ -54,6 +54,12 @@ class LicenseMatch extends BaseEntity {
   @prop()
   gender: boolean;
 
+  @prop()
+  issuedDate: boolean;
+
+  @prop()
+  expired: boolean;
+
   @prop({ enum: EVerificationStatus })
   status: EVerificationStatus;
 }

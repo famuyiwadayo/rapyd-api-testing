@@ -21,8 +21,8 @@ export class Phone {
 }
 
 export class PersonalInfo {
-  @prop()
-  dob: Date;
+  @prop({ type: () => Date })
+  dob: string | Date;
 
   @prop({ enum: Gender, default: Gender.UNSPECIFIED })
   sex: Gender;
@@ -60,8 +60,8 @@ export class NextOfKin {
   @prop()
   lastName: string;
 
-  @prop()
-  dob: Date;
+  @prop({ type: () => Date })
+  dob: string | Date;
 
   @prop()
   sex: Gender;

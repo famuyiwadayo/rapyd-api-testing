@@ -7,6 +7,7 @@ export type RapydEventTypes = {
   // ACCOUNT EVENT TYPES
   "account:tested": { sub: string; roles: string[] };
   "account:created": { owner: Account };
+  "account:logged_in": { owner: Account };
   "account:verified": { owner: Account };
   "account:bank:added": { owner: string };
   "account:bank:removed": { owner: Account };

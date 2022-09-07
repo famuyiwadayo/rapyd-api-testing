@@ -51,3 +51,7 @@ export { default as notification, Notification, NotificationType } from "./notif
 export { default as bankInfo, BankInfo } from "./bankInfo";
 
 export { default as verificationStatus, VerificationStatus } from "./verificationStatus";
+
+export { default as registrationRequest, RegistrationRequest } from "./registrationRequest";
+
+export { default as driverActivity, DriverActivity } from "./driverActivity";

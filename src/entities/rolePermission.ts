@@ -22,6 +22,8 @@ export enum AvailableResource {
   LOAN = "loan",
   NOTIFICATION = "notification",
   HISTORY = "history",
+  REGISTRATION_REQUEST = "registration_request",
+  ACTIVITY = "activity",
 }
 
 class Scope {

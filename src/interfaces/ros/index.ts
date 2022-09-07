@@ -24,4 +24,4 @@ export type {
 
 export type { GetPeriodicVehicleInstalmentRo, GetCurrentUserVehicleFinanceAnalysis } from "./finance.ro";
 
-export type { VerifyNiNRo, VerifyBvnRo, VerifyDriversLicenseRo, VerifyAddressRo } from "./verifyMe.ro";
+export type { VerifyNiNRo, VerifyBvnRo, VerifyDriversLicenseRo, VerifyAddressRo, VerifyMeRo } from "./verifyMe.ro";

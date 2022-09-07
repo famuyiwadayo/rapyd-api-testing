@@ -15,6 +15,7 @@ import {
 import config from "../config";
 import { AvailableRole } from "../entities/role";
 import { AuthVerificationReason } from "../valueObjects";
+import { RapydBus } from "../libs";
 
 export default class AuthService {
   private accountService = new AccountService();
@@ -26,6 +27,8 @@ export default class AuthService {
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
+
+    await RapydBus.emit("account:logged_in", { owner: acc });
     return { payload, token };
   }
 

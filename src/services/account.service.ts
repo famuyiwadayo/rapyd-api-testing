@@ -37,8 +37,11 @@ export default class AccountService {
       roles: roles ?? [],
       rapydId: AuthVerificationService.generateCode(),
     })) as Account;
-    await this.passwordService.addPassword(acc._id!, input.password);
-    roles && roles[0] && (await this.updatePrimaryRole(acc._id!, roles[0]));
+
+    await Promise.all([
+      this.passwordService.addPassword(acc._id!, input.password),
+      roles && roles[0] && this.updatePrimaryRole(acc._id!, roles[0]),
+    ]);
     acc = (await account.findById(acc._id).lean().exec()) as Account;
     await RapydBus.emit("account:created", { owner: acc });
     return acc;

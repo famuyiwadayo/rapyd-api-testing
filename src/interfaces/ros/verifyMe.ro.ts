@@ -68,3 +68,8 @@ export interface VerifyAddressRo {
     reference: string;
   };
 }
+
+export interface VerifyMeRo<T> {
+  status: string;
+  data: T;
+}

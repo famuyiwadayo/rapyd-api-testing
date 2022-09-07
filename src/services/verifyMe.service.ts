@@ -2,14 +2,14 @@ import consola from "consola";
 import configs from "../config";
 import { createError, getUpdateOptions, makeRequest, validateFields } from "../utils";
 import { BiodataDto, VerifyAddressDto, VerifyBvnDto, VerifyDriversLicenseDto, VerifyMeRoute, VerifyNinDto } from "../interfaces/dtos";
-import { VerifyAddressRo, VerifyBvnRo, VerifyDriversLicenseRo, VerifyNiNRo } from "../interfaces/ros";
+import { VerifyAddressRo, VerifyBvnRo, VerifyDriversLicenseRo, VerifyMeRo, VerifyNiNRo } from "../interfaces/ros";
 import { Account, account, verificationStatus, VerificationStatus } from "../entities";
-import { format, isEqual as isDateEqual } from "date-fns";
-import { isEqual } from "lodash";
+import { format, isEqual as isDateEqual, isPast } from "date-fns";
+import { isEqual, toLower } from "lodash";
 import { EVerificationStatus } from "../entities/verificationStatus";
 
 const toGender = (value: string) => {
-  if (!value.toLowerCase().split("").includes("f")) return "male";
+  if (!String(value).toLowerCase().split("").includes("f")) return "male";
   else return "female";
 };
 
@@ -17,40 +17,40 @@ export default class VerifyMeService {
   static async verifyNiN(input: VerifyNinDto) {
     validateFields(input, ["dob", "firstname", "lastname", "nin"]);
     const { nin, ...data } = input;
-    const res = await makeRequest<Omit<VerifyNinDto, "nin">, VerifyNiNRo>({
+    const res = await makeRequest<Omit<VerifyNinDto, "nin">, VerifyMeRo<VerifyNiNRo>>({
       data,
       method: "POST",
       url: VerifyMeService.createUrl(VerifyMeRoute.NIN, nin),
       headers: VerifyMeService.getHeaders(),
     });
 
-    return res?.data;
+    return res?.data?.data;
   }
 
   static async verifyBvn(input: VerifyBvnDto) {
     validateFields(input, ["dob", "firstname", "lastname", "bvn"]);
     const { bvn, ...data } = input;
-    const res = await makeRequest<Omit<VerifyBvnDto, "bvn">, VerifyBvnRo>({
+    const res = await makeRequest<Omit<VerifyBvnDto, "bvn">, VerifyMeRo<VerifyBvnRo>>({
       data,
       method: "POST",
       url: VerifyMeService.createUrl(VerifyMeRoute.BVN, bvn),
       headers: VerifyMeService.getHeaders(),
     });
 
-    return res?.data;
+    return res?.data?.data;
   }
 
   static async verifyDriversLicense(input: VerifyDriversLicenseDto) {
     validateFields(input, ["dob", "firstname", "lastname", "licenseNo"]);
     const { licenseNo, ...data } = input;
-    const res = await makeRequest<Omit<VerifyDriversLicenseDto, "licenseNo">, VerifyDriversLicenseRo>({
+    const res = await makeRequest<Omit<VerifyDriversLicenseDto, "licenseNo">, VerifyMeRo<VerifyDriversLicenseRo>>({
       data,
       method: "POST",
       url: VerifyMeService.createUrl(VerifyMeRoute.DRIVERS_LICENSE, licenseNo),
       headers: VerifyMeService.getHeaders(),
     });
 
-    return res?.data;
+    return res?.data?.data;
   }
 
   static async verifyAddress(input: VerifyAddressDto) {
@@ -97,67 +97,72 @@ export default class VerifyMeService {
     const { nin } = biodata.securityQuestions;
 
     const gender = toGender(sex);
+    const dateOfBirth = format(new Date(dob), "dd-MM-yyyy");
 
     const acc = await account.findById(accountId).select(["firstName", "lastName"]).lean<Account>().exec();
     if (!acc) throw createError("Account not found", 404);
     const ninInfo = await VerifyMeService.verifyNiN({
       firstname: acc?.firstName,
       lastname: acc?.lastName,
-      dob: format(dob, "dd-MM-yyyy"),
+      dob: format(new Date(dob), "dd-MM-yyyy"),
       nin,
     });
 
-    const match: Omit<VerificationStatus["nin"], "status" | "_id"> = {
+    let match: Partial<VerificationStatus["nin"]> = {
       ninValue: nin,
-      firstname: isEqual(acc?.firstName, ninInfo.firstname),
-      lastname: isEqual(acc?.lastName, ninInfo.lastname),
+      firstname: isEqual(toLower(acc?.firstName), toLower(ninInfo.firstname)),
+      lastname: isEqual(toLower(acc?.lastName), toLower(ninInfo.lastname)),
       nin: isEqual(nin, ninInfo.nin),
-      dob: isDateEqual(dob, new Date(ninInfo.birthdate)),
+      dob: isDateEqual(new Date(dateOfBirth), new Date(ninInfo.birthdate)),
       gender: isEqual(gender, toGender(ninInfo.gender as string)),
     };
 
+    // console.log({ match, dobString: dateOfBirth, dob: new Date(dob), birthdate: new Date(licenseInfo.birthdate), licenseInfo });
+
     const isValid = match.firstname && match.lastname && match.dob && match.gender && match.nin;
+    match.status = isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED;
+
     return await verificationStatus
-      .findOneAndUpdate(
-        { account: accountId },
-        { nin: match, status: isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED },
-        getUpdateOptions()
-      )
+      .findOneAndUpdate({ account: accountId }, { nin: match }, getUpdateOptions())
       .lean<VerificationStatus>()
       .exec();
   }
 
   static async checkAndValidateDriversLicense(accountId: string, biodata: BiodataDto): Promise<VerificationStatus> {
     const { dob, sex } = biodata.personalInfo;
-    const { licenseNo } = biodata.securityQuestions;
+    const { licenseNo, dateIssued } = biodata.securityQuestions;
 
     const gender = toGender(sex);
+    const dateOfBirth = format(new Date(dob), "dd-MM-yyyy");
+    const issuedDate = format(new Date(dateIssued), "dd-MM-yyyy");
 
     const acc = await account.findById(accountId).select(["firstName", "lastName"]).lean<Account>().exec();
     if (!acc) throw createError("Account not found", 404);
     const licenseInfo = await VerifyMeService.verifyDriversLicense({
       firstname: acc?.firstName,
       lastname: acc?.lastName,
-      dob: format(dob, "dd-MM-yyyy"),
+      dob: dateOfBirth,
       licenseNo,
     });
 
-    const match: Omit<VerificationStatus["driversLicense"], "status" | "_id"> = {
+    let match: Partial<VerificationStatus["driversLicense"]> = {
       licenseNoValue: licenseNo,
       firstname: isEqual(acc?.firstName, licenseInfo.firstname),
       lastname: isEqual(acc?.lastName, licenseInfo.lastname),
       licenseNo: isEqual(licenseNo, licenseInfo.licenseNo),
-      dob: isDateEqual(dob, new Date(licenseInfo.birthdate)),
+      dob: isDateEqual(new Date(dateOfBirth), new Date(licenseInfo.birthdate)),
       gender: isEqual(gender, toGender(licenseInfo.gender as string)),
+      issuedDate: isDateEqual(new Date(issuedDate), new Date(licenseInfo.issuedDate)),
+      expired: isPast(new Date(licenseInfo.expiryDate)),
     };
 
-    const isValid = match.firstname && match.lastname && match.dob && match.gender && match.licenseNo;
+    const isValid = match.firstname && match.lastname && match.dob && match.gender && match.licenseNo && !match.expired;
+    match.status = isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED;
+
+    // console.log({ match, dobString: dateOfBirth, dob: new Date(dob), birthdate: new Date(licenseInfo.birthdate), licenseInfo });
+
     return await verificationStatus
-      .findOneAndUpdate(
-        { account: accountId },
-        { driversLicense: match, status: isValid ? EVerificationStatus.VERIFIED : EVerificationStatus.REJECTED },
-        getUpdateOptions()
-      )
+      .findOneAndUpdate({ account: accountId }, { driversLicense: match }, getUpdateOptions())
       .lean<VerificationStatus>()
       .exec();
   }
