@@ -20,10 +20,10 @@ import { RapydBus } from "../libs";
 export default class AuthService {
   private accountService = new AccountService();
 
-  async login(data: loginDto, deviceId: string): Promise<Auth> {
+  async login(data: loginDto, deviceId: string, admin = false): Promise<Auth> {
     // validateFields(data);
     console.log("DEVICE ID", deviceId);
-    const acc = await this.accountService.findByLogin(data.email, data.password);
+    const acc = await this.accountService.findByLogin(data.email, data.password, admin);
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;

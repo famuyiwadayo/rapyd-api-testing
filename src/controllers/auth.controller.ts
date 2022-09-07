@@ -22,11 +22,7 @@ export default class AuthController {
     try {
       const body = req.body;
       const deviceId = req.headers["device-id"] as string;
-      const data = await service.registerWithRole(
-        body,
-        AvailableRole.DRIVER,
-        deviceId
-      );
+      const data = await service.registerWithRole(body, AvailableRole.DRIVER, deviceId);
       sendResponse(res, 201, data);
     } catch (error) {
       sendError(error, next);
@@ -58,11 +54,18 @@ export default class AuthController {
     }
   }
 
-  async requestEmailVerification(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  async adminLogin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const body = req.body;
+      const deviceId = req.headers["device-id"] as string;
+      const data = await service.login(body, deviceId, true);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async requestEmailVerification(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.requestEmailVerification(req.user.sub);
       sendResponse(res, 200, data);
@@ -71,11 +74,7 @@ export default class AuthController {
     }
   }
 
-  async requestResetPasswordToken(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
+  async requestResetPasswordToken(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await service.requestResetPasswordToken(req.body.email);
       sendResponse(res, 200, data);
@@ -89,12 +88,7 @@ export default class AuthController {
       const { code } = req.body;
       const deviceId = req.headers["device-id"] as string;
 
-      const data = await service.verifyEmail(
-        req.user.sub,
-        code,
-        req.user.roles,
-        deviceId
-      );
+      const data = await service.verifyEmail(req.user.sub, code, req.user.roles, deviceId);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);

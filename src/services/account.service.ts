@@ -433,9 +433,15 @@ export default class AccountService {
     return _account;
   }
 
-  async findByLogin(email: string, password: string): Promise<Account> {
-    const acc = await account.findOne({ email }).lean().exec();
+  async findByLogin(email: string, password: string, admin = false): Promise<Account> {
+    const where: any = { email };
+    if (!admin) Object.assign(where, { primaryRole: "driver" });
+
+    const acc = await account.findOne(where).lean().exec();
     if (!acc) throw createError("Account not found", 404);
+    const roles = acc?.roles?.map((role) => String(role));
+    if (admin && !(await RoleService.isAdmin(roles))) throw createError("❌ Access Denied", 401);
+
     if (!(await this.passwordService.checkPassword(acc._id!, password))) throw createError("Incorrect password", 401);
     await AccountService.updateLastSeen(acc?._id);
     return acc;

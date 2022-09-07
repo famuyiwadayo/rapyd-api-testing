@@ -85,7 +85,7 @@ export default class GuarantorService {
 
   static async hasAdminPrivileges(roles: string[]): Promise<boolean> {
     return await RoleService.hasOneOrMore(
-      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, , AvailableRole.ACCOUNTS_ADMIN, AvailableRole.MODERATOR],
+      [AvailableRole.SUPERADMIN, AvailableRole.FLEET_MANAGER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.MODERATOR],
       roles
     );
   }

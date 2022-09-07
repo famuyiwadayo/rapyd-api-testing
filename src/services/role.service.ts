@@ -2,16 +2,7 @@
 
 import { addPermissionDto } from "../interfaces/dtos";
 import { createError, createSlug, getUpdateOptions } from "../utils";
-import {
-  permission,
-  resource,
-  Role,
-  Permission,
-  Resource,
-  account,
-  Account,
-  role,
-} from "../entities";
+import { permission, resource, Role, Permission, Resource, account, Account, role, AvailableRole } from "../entities";
 // import { Types } from "mongoose";
 import { PermissionScope } from "../valueObjects";
 import AuthService from "./auth.service";
@@ -26,20 +17,12 @@ export default class RoleService {
   async createRole(name: string): Promise<Role> {
     if (!name) throw createError("Role name is required", 400);
     return (await role
-      .findOneAndUpdate(
-        { name },
-        { name, slug: createSlug(name) },
-        getUpdateOptions()
-      )
+      .findOneAndUpdate({ name }, { name, slug: createSlug(name) }, getUpdateOptions())
       .lean()
       .exec()) as Role;
   }
 
-  async assignRole(
-    roleId: string,
-    accountId: string,
-    invalidateAuthCode = true
-  ): Promise<Account> {
+  async assignRole(roleId: string, accountId: string, invalidateAuthCode = true): Promise<Account> {
     invalidateAuthCode && (await AuthService.invalidateAuthCode(accountId));
     return (await account
       .findByIdAndUpdate(accountId, { $push: { roles: roleId } }, { new: true })
@@ -47,11 +30,7 @@ export default class RoleService {
       .exec()) as Account;
   }
 
-  async unassignRole(
-    roleId: string,
-    accountId: string,
-    invalidateAuthCode = true
-  ): Promise<Account> {
+  async unassignRole(roleId: string, accountId: string, invalidateAuthCode = true): Promise<Account> {
     invalidateAuthCode && (await AuthService.invalidateAuthCode(accountId));
     return (await account
       .findByIdAndUpdate(accountId, { $pull: { roles: roleId } }, { new: true })
@@ -59,11 +38,7 @@ export default class RoleService {
       .exec()) as Account;
   }
 
-  async managePermissionScopes(
-    roleId: string,
-    resourceId: string,
-    scopes: PermissionScope[]
-  ): Promise<Permission> {
+  async managePermissionScopes(roleId: string, resourceId: string, scopes: PermissionScope[]): Promise<Permission> {
     const _temp = (await permission
       .findOne({
         role: roleId,
@@ -78,23 +53,15 @@ export default class RoleService {
     //   uniq(_temp?.scopes?.map((s) => s.name) ?? []),
     //   "\n"
     // );
-    const newScopes = difference(
-      scopes ?? [],
-      uniq((_temp?.scopes ?? [])?.map((s) => s.name))
-    );
+    const newScopes = difference(scopes ?? [], uniq((_temp?.scopes ?? [])?.map((s) => s.name)));
 
-    const deletedScopes = difference(
-      uniq((_temp?.scopes ?? [])?.map((s) => s.name)),
-      scopes ?? []
-    );
+    const deletedScopes = difference(uniq((_temp?.scopes ?? [])?.map((s) => s.name)), scopes ?? []);
     // console.log("INCOMING SCOPES", newScopes);
     // console.log("DELETED SCOPES", deletedScopes, "\n");
 
     if (!isEmpty(deletedScopes)) {
       const toRemove: any = [];
-      deletedScopes.map((scope) =>
-        toRemove.push(this.revokePermissionScope(roleId, resourceId, scope))
-      );
+      deletedScopes.map((scope) => toRemove.push(this.revokePermissionScope(roleId, resourceId, scope)));
       await Promise.all(toRemove);
     }
 
@@ -118,11 +85,7 @@ export default class RoleService {
     }
   }
 
-  async addPermissionScopes(
-    roleId: string,
-    resourceId: string,
-    scopes: PermissionScope[]
-  ): Promise<Permission> {
+  async addPermissionScopes(roleId: string, resourceId: string, scopes: PermissionScope[]): Promise<Permission> {
     const _temp = (await permission
       .findOne({
         role: roleId,
@@ -131,10 +94,7 @@ export default class RoleService {
       .lean()
       .exec()) as Permission;
 
-    const newScopes = difference(
-      scopes ?? [],
-      uniq((_temp?.scopes ?? [])?.map((s) => s.name))
-    );
+    const newScopes = difference(scopes ?? [], uniq((_temp?.scopes ?? [])?.map((s) => s.name)));
     // console.log("INCOMING SCOPES", newScopes);
 
     if (!isEmpty(newScopes)) {
@@ -157,30 +117,17 @@ export default class RoleService {
     }
   }
 
-  async revokePermissionScope(
-    roleId: string,
-    resourceId: string,
-    scope: PermissionScope
-  ): Promise<Permission> {
+  async revokePermissionScope(roleId: string, resourceId: string, scope: PermissionScope): Promise<Permission> {
     return (await permission
-      .findOneAndUpdate(
-        { role: roleId, resource: resourceId },
-        { $pull: { scopes: { name: scope } } },
-        { new: true }
-      )
+      .findOneAndUpdate({ role: roleId, resource: resourceId }, { $pull: { scopes: { name: scope } } }, { new: true })
       .lean()
       .exec()) as Permission;
   }
 
-  async addPermission(
-    roleId: string,
-    input: addPermissionDto
-  ): Promise<Permission> {
+  async addPermission(roleId: string, input: addPermissionDto): Promise<Permission> {
     const { resourceId, scopes } = input;
-    if ((await resource.countDocuments({ _id: resourceId })) < 1)
-      throw createError("Resource not found", 404);
-    if ((await role.countDocuments({ _id: roleId })) < 1)
-      throw createError("Role not found", 404);
+    if ((await resource.countDocuments({ _id: resourceId })) < 1) throw createError("Resource not found", 404);
+    if ((await role.countDocuments({ _id: roleId })) < 1) throw createError("Role not found", 404);
 
     return (await permission
       .findOneAndUpdate(
@@ -199,33 +146,19 @@ export default class RoleService {
       .exec()) as Permission;
   }
 
-  async revokePermission(
-    roleId: string,
-    resourceId: string
-  ): Promise<Permission> {
-    if ((await role.countDocuments({ _id: roleId })) < 1)
-      throw createError("Role not found", 404);
-    return (await permission
-      .findOneAndDelete({ resource: resourceId, role: roleId })
-      .lean()
-      .exec()) as Permission;
+  async revokePermission(roleId: string, resourceId: string): Promise<Permission> {
+    if ((await role.countDocuments({ _id: roleId })) < 1) throw createError("Role not found", 404);
+    return (await permission.findOneAndDelete({ resource: resourceId, role: roleId }).lean().exec()) as Permission;
   }
 
   async getPermissions(roleId: string): Promise<Permission[]> {
-    return (await permission
-      .find({ role: roleId })
-      .populate(["resource"])
-      .lean()
-      .exec()) as Permission[];
+    return (await permission.find({ role: roleId }).populate(["resource"]).lean().exec()) as Permission[];
   }
 
   async createResource(value: string): Promise<Resource> {
     if (!value) throw createError("Resource name is required", 400);
     const name = createSlug(value);
-    return (await resource
-      .findOneAndUpdate({ name }, { name }, getUpdateOptions())
-      .lean()
-      .exec()) as Resource;
+    return (await resource.findOneAndUpdate({ name }, { name }, getUpdateOptions()).lean().exec()) as Resource;
   }
 
   async getResources(): Promise<Resource[]> {
@@ -233,10 +166,7 @@ export default class RoleService {
   }
 
   async deleteResource(id: string): Promise<Resource[]> {
-    return (await resource
-      .deleteOne({ _id: id }, { new: true })
-      .lean()
-      .exec()) as Resource[];
+    return (await resource.deleteOne({ _id: id }, { new: true }).lean().exec()) as Resource[];
   }
 
   async getRoles(): Promise<Role[]> {
@@ -273,6 +203,20 @@ export default class RoleService {
     return res;
   }
 
+  static async isAdmin(roles: string[]): Promise<boolean> {
+    const _roles = (
+      await RoleService.getRoleBySlugs([
+        AvailableRole.SUPERADMIN,
+        AvailableRole.MODERATOR,
+        AvailableRole.FLEET_MANAGER,
+        AvailableRole.ACCOUNTS_ADMIN,
+      ])
+    ).map((role) => String(role?._id));
+
+    const intersections = intersection(_roles, roles);
+    return !isEmpty(intersections);
+  }
+
   static async getRoleById(id: string, dryRun = false): Promise<Role> {
     const res = (await role.findById(id).lean().exec()) as Role;
     if (!res && !dryRun) throw createError("Role not found", 404);
@@ -293,10 +237,7 @@ export default class RoleService {
     resourceName: string,
     scopes: PermissionScope[]
   ): Promise<boolean> {
-    const toRun = [
-      RoleService.getResourceByName(resourceName),
-      RoleService.getRoleBySlug(requiredRoleSlug),
-    ];
+    const toRun = [RoleService.getResourceByName(resourceName), RoleService.getRoleBySlug(requiredRoleSlug)];
     const result = await Promise.all(toRun);
     return Boolean(
       (await permission
@@ -310,11 +251,7 @@ export default class RoleService {
     );
   }
 
-  private static async _checkPermission(
-    roleId: string,
-    resourceName: string,
-    scopes: PermissionScope[]
-  ): Promise<boolean> {
+  private static async _checkPermission(roleId: string, resourceName: string, scopes: PermissionScope[]): Promise<boolean> {
     const res = await RoleService.getResourceByName(resourceName);
     return Boolean(
       await permission
@@ -336,14 +273,7 @@ export default class RoleService {
   ): Promise<void> {
     const toRunInParallel: any[] = [];
     requiredRoleSlugs?.forEach((requiredRole) =>
-      toRunInParallel.push(
-        RoleService._requiresPermission(
-          requiredRole,
-          roles,
-          resourceName,
-          scopes
-        )
-      )
+      toRunInParallel.push(RoleService._requiresPermission(requiredRole, roles, resourceName, scopes))
     );
     const result = (await Promise.all(toRunInParallel)).filter(Boolean);
     if (result[0] !== true) throw createError("Access denied", 401);
@@ -351,30 +281,17 @@ export default class RoleService {
     return;
   }
 
-  static async hasPermission(
-    roles: string[],
-    resourceName: string,
-    scopes: PermissionScope[]
-  ): Promise<void> {
+  static async hasPermission(roles: string[], resourceName: string, scopes: PermissionScope[]): Promise<void> {
     const toRunInParallel: any[] = [];
-    roles.forEach((role) =>
-      toRunInParallel.push(
-        RoleService._checkPermission(role, resourceName, scopes)
-      )
-    );
+    roles.forEach((role) => toRunInParallel.push(RoleService._checkPermission(role, resourceName, scopes)));
     const result = (await Promise.all(toRunInParallel)).filter(Boolean);
     if (result[0] !== true) throw createError("Access denied", 401);
     consola.success("✅ Access granted");
     return;
   }
 
-  static async hasOneOrMore(
-    roles: AvailableRole[],
-    roleIds: string[]
-  ): Promise<boolean> {
-    const _roles = await RoleService.getRoleBySlugs(
-      roles.map((role) => String(role).toString())
-    );
+  static async hasOneOrMore(roles: AvailableRole[], roleIds: string[]): Promise<boolean> {
+    const _roles = await RoleService.getRoleBySlugs(roles.map((role) => String(role).toString()));
 
     const _intersect = intersection(
       roleIds,
