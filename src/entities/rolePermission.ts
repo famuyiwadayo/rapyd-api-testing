@@ -24,6 +24,7 @@ export enum AvailableResource {
   HISTORY = "history",
   REGISTRATION_REQUEST = "registration_request",
   ACTIVITY = "activity",
+  ADMIN_COMMENT = "admin_comment",
 }
 
 class Scope {

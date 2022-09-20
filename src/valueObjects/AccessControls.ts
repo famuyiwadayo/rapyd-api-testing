@@ -106,6 +106,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.NOTIFICATION,
         scopes: [PermissionScope.READ, PermissionScope.MARK],
       },
+      {
+        name: AvailableResource.ADMIN_COMMENT,
+        scopes: [PermissionScope.ALL],
+      },
     ],
   },
   superadmin: {
@@ -166,6 +170,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.ACTIVITY,
         scopes: [PermissionScope.ALL],
       },
+      {
+        name: AvailableResource.ADMIN_COMMENT,
+        scopes: [PermissionScope.ALL],
+      },
     ],
   },
   fleet_manager: {
@@ -202,6 +210,10 @@ const defaultAccessControls: AccessControlType = {
         name: AvailableResource.NOTIFICATION,
         scopes: [PermissionScope.ALL],
       },
+      {
+        name: AvailableResource.ADMIN_COMMENT,
+        scopes: [PermissionScope.ALL],
+      },
     ],
   },
   accounts_admin: {
@@ -232,6 +244,10 @@ const defaultAccessControls: AccessControlType = {
       },
       {
         name: AvailableResource.NOTIFICATION,
+        scopes: [PermissionScope.ALL],
+      },
+      {
+        name: AvailableResource.ADMIN_COMMENT,
         scopes: [PermissionScope.ALL],
       },
     ],

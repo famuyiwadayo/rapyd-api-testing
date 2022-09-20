@@ -8,6 +8,7 @@ import AccountService from "./auth.service";
 import RoleService from "./role.service";
 import { Auth } from "../interfaces/ros";
 import { PermissionScope } from "../valueObjects";
+import EmailService, { Template } from "./email.service";
 
 export default class RegistrationRequestService {
   public async makeRequest(input: makeRegistrationRequestDto, roles: string[]): Promise<RegistrationRequest> {
@@ -15,12 +16,22 @@ export default class RegistrationRequestService {
       PermissionScope.CREATE,
       PermissionScope.ALL,
     ]);
-    return await registrationRequest.create({
-      token: RegistrationRequestService.generateUniqueToken(),
+
+    const token = RegistrationRequestService.generateUniqueToken();
+    const r = await registrationRequest.create({
+      token,
       primaryRole: input.role,
       email: input.email,
       expiry: setExpiration(0.5),
     });
+
+    if (r)
+      EmailService.sendEmail("Rapydcars Administrator Invite", input.email, Template.ADMIN_INVITE, {
+        link: `https://rapydcars.com/admin?token=${token}`,
+        name: input.email,
+      });
+
+    return r;
   }
 
   public async registerAccount(input: registerAccountDto, deviceId: string): Promise<Auth> {

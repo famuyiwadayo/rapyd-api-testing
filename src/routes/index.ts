@@ -16,6 +16,7 @@ import TransactionRouter from "./transactions.routes";
 import EmailRouter from "./email.routes";
 import NotificationRouter from "./notification.routes";
 import ActivityRouter from "./activity.routes";
+import AdminCommentRouter from "./adminComment.routes";
 
 import VerifyMeRouter from "./verifyMe.routes";
 import RegistrationRequestRouter from "./registrationRequest.routes";
@@ -41,6 +42,7 @@ routes.use("/guarantors", GuarantorRouter);
 routes.use("/transactions", TransactionRouter);
 routes.use("/notifications", NotificationRouter);
 routes.use("/activities", ActivityRouter);
+routes.use("/comments", AdminCommentRouter);
 
 routes.use("/emails", EmailRouter);
 

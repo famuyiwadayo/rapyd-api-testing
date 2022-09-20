@@ -55,3 +55,5 @@ export { default as verificationStatus, VerificationStatus } from "./verificatio
 export { default as registrationRequest, RegistrationRequest } from "./registrationRequest";
 
 export { default as driverActivity, DriverActivity } from "./driverActivity";
+
+export { default as adminComment, AdminComment } from "./adminComment";

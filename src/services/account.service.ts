@@ -441,7 +441,6 @@ export default class AccountService {
     if (!acc) throw createError("Account not found", 404);
     const roles = acc?.roles?.map((role) => String(role));
     if (admin && !(await RoleService.isAdmin(roles))) throw createError("❌ Access Denied", 401);
-
     if (!(await this.passwordService.checkPassword(acc._id!, password))) throw createError("Incorrect password", 401);
     await AccountService.updateLastSeen(acc?._id);
     return acc;

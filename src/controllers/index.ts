@@ -16,3 +16,5 @@ export { default as NotificationController } from "./notification.controller";
 export { default as VerifyMeController } from "./verifyMe.controller";
 export { default as RegistrationRequestController } from "./registrationRequest.controller";
 export { default as DriverActivityController } from "./activity.controller";
+
+export { default as AdminCommentController } from "./adminComment.controller";
