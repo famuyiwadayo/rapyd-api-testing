@@ -179,7 +179,7 @@ export default class OnboardingService {
       [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    if (!(await VehicleService.checkVehicleExists(vehicleId, { isAssigned: false }))) throw createError("Vehicle not found", 404);
+    if (!(await VehicleService.checkVehicleExists(vehicleId, {}))) throw createError("Vehicle not found", 404);
 
     const application = await onboarding
       .findOneAndUpdate(
