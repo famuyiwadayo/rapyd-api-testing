@@ -137,8 +137,8 @@ export default class OnboardingService {
       [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
-    if (!isMatch(input.personalInfo.dob as string, "dd-MM-yyyy") || !isMatch(input.nextOfKin.dob as string, "dd-MM-yyyy"))
-      throw createError("Date of birth should have the format: dd-mm-yyyy");
+    if (!isMatch(input.personalInfo.dob as string, "dd/MM/yyyy") || !isMatch(input.nextOfKin.dob as string, "dd/MM/yyyy"))
+      throw createError("Date of birth should have the format: dd/mm/yyyy");
 
     await Promise.all([
       VerifyMeService.checkAndValidateNiN(accountId, input),
