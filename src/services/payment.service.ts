@@ -122,7 +122,7 @@ export default class PaymentService {
   static async getAPR(duration: string | number, validate = true): Promise<number> {
     const result = await paymentItem.findOne({ for: PaymentItemFor.VEHICLE_INTEREST, duration }).lean<PaymentItem>().exec();
     if (validate && !result) {
-      throw createError(`Vehicle Interest payment item for ${duration} not found, please contact the administrator`, 404);
+      throw createError(`Vehicle Interest payment item for ${duration} months not found, please contact the administrator`, 404);
     }
     return result.apr ?? 0;
   }

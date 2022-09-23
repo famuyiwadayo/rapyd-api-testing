@@ -1,6 +1,6 @@
 import { PaginatedDocument } from "../interfaces/ros";
 import { RapydBus } from "../libs";
-import { createError, paginate } from "../utils";
+import { createError, paginate, validateFields } from "../utils";
 import { PermissionScope } from "../valueObjects";
 import { adminComment, AdminComment, AvailableResource } from "../entities";
 import RoleService from "./role.service";
@@ -22,19 +22,20 @@ export default class AdminCommentService {
 
   async create(
     sub: string,
-    input: Omit<AdminComment, "_id" | "createdAt" | "updatedAt" | "account">,
+    input: Omit<AdminComment, "_id" | "createdAt" | "updatedAt" | "creator">,
     roles: string[]
   ): Promise<AdminComment> {
+    validateFields(input, ["driver", "title", "description"]);
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.CREATE, PermissionScope.ALL]);
-    const comment = await adminComment.create({ ...input, account: sub });
-    await RapydBus.emit("adminComment:created", { account: sub });
+    const comment = await adminComment.create({ ...input, creator: sub });
+    await RapydBus.emit("adminComment:created", { creator: sub, account: input.driver as string });
     return comment;
   }
 
   async update(
     sub: string,
     id: string,
-    input: Partial<Omit<AdminComment, "_id" | "createdAt" | "updatedAt" | "account">>,
+    input: Partial<Omit<AdminComment, "_id" | "createdAt" | "updatedAt" | "creator">>,
     roles: string[]
   ): Promise<AdminComment> {
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.UPDATE, PermissionScope.ALL]);
@@ -43,7 +44,7 @@ export default class AdminCommentService {
       .lean<AdminComment>()
       .exec();
     if (!comment) throw createError("Comment not found", 404);
-    await RapydBus.emit("adminComment:updated", { account: sub });
+    await RapydBus.emit("adminComment:updated", { creator: sub as string, account: comment?.driver as string });
     return comment;
   }
 
@@ -51,7 +52,7 @@ export default class AdminCommentService {
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.UPDATE, PermissionScope.ALL]);
     const comment = await adminComment.findByIdAndDelete(id, { new: true }).lean<AdminComment>().exec();
     if (!comment) throw createError("Comment not found", 404);
-    await RapydBus.emit("adminComment:updated", { account: sub });
+    await RapydBus.emit("adminComment:updated", { creator: sub, account: comment?.driver as string });
     return comment;
   }
 

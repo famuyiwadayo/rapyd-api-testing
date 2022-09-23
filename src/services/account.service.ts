@@ -28,7 +28,7 @@ export default class AccountService {
     await RapydBus.emit("account:tested", { roles, sub });
   }
 
-  async createAccount(input: AccountDto, roles?: string[]): Promise<Account> {
+  async createAccount(input: AccountDto, roles?: string[], isAdminReg = false): Promise<Account> {
     // validateFields(input);
     let acc = (await account.create({
       ...input,
@@ -36,6 +36,7 @@ export default class AccountService {
       refCode: nanoid(12),
       roles: roles ?? [],
       rapydId: AuthVerificationService.generateCode(),
+      isEmailVerified: isAdminReg ? true : false,
     })) as Account;
 
     await Promise.all([
@@ -182,6 +183,7 @@ export default class AccountService {
       role?: AvailableRole;
       vehicleId?: string;
       approved?: boolean;
+      vehicleStatus?: string;
     } = {
       limit: "10",
       page: "1",
@@ -195,6 +197,8 @@ export default class AccountService {
     );
 
     let queries: { $and?: any[] } = {};
+
+    const vehicleStatuses = String(filters?.vehicleStatus ?? "").split(",");
 
     // this is probably gonna make operations a tardy bit slower.
     // aggregation could be used here to make it faster.
@@ -212,6 +216,15 @@ export default class AccountService {
     if (filters?.approved) {
       queries = { $and: [...(queries?.$and ?? [])] };
       queries.$and.push({ isApproved: filters?.approved });
+    }
+
+    if (filters?.vehicleStatus) {
+      queries = { $and: [...(queries?.$and ?? [])] };
+      queries.$and.push({
+        $or: vehicleStatuses.map((status) => ({
+          "vehicleInfo.vehicleStatus": status,
+        })),
+      });
     }
 
     // console.log(JSON.stringify(queries));

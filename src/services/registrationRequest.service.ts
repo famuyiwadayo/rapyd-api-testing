@@ -3,7 +3,7 @@
 import { nanoid } from "nanoid";
 import { makeRegistrationRequestDto, registerAccountDto } from "../interfaces/dtos";
 import { AvailableResource, AvailableRole, registrationRequest, RegistrationRequest } from "../entities";
-import { createError, setExpiration } from "../utils";
+import { createError, setExpiration, validateFields } from "../utils";
 import AccountService from "./auth.service";
 import RoleService from "./role.service";
 import { Auth } from "../interfaces/ros";
@@ -26,8 +26,8 @@ export default class RegistrationRequestService {
     });
 
     if (r)
-      EmailService.sendEmail("Rapydcars Administrator Invite", input.email, Template.ADMIN_INVITE, {
-        link: `https://rapydcars.com/admin?token=${token}`,
+      await EmailService.sendEmail("Rapydcars Administrator Invite", input.email, Template.ADMIN_INVITE, {
+        link: `https://admin.rapydcars.com/register?token=${token}`,
         name: input.email,
       });
 
@@ -35,6 +35,7 @@ export default class RegistrationRequestService {
   }
 
   public async registerAccount(input: registerAccountDto, deviceId: string): Promise<Auth> {
+    validateFields(input, ["email", "firstName", "lastName", "gender", "password", "token"]);
     const request = await registrationRequest
       .findOne({ token: input.token, used: false, expiry: { $gt: Date.now() } })
       .select(["primaryRole", "email"])
@@ -42,7 +43,7 @@ export default class RegistrationRequestService {
       .exec();
     if (!request) throw createError("Registration request is invalid", 400);
     if (request.email !== input.email) throw createError("Registration email does not match", 400);
-    const auth = await new AccountService().register({ ...input }, deviceId, [request.primaryRole as string]);
+    const auth = await new AccountService().register({ ...input }, deviceId, [request.primaryRole as string], true);
     await RegistrationRequestService.invalidateRequest(input.token);
     return auth;
   }

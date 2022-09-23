@@ -8,10 +8,16 @@ export class AdminComment extends BaseEntity {
   title?: string;
 
   @prop({ ref: () => Account })
-  account: Ref<Account>;
+  creator: Ref<Account>;
+
+  @prop({ ref: () => Account })
+  driver: Ref<Account>;
 
   @prop()
   description: string;
+
+  @prop()
+  images: string[];
 }
 
 export default getModelForClass(AdminComment);

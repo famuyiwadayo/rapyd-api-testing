@@ -32,15 +32,15 @@ export default class AuthService {
     return { payload, token };
   }
 
-  async register(data: registerDto, deviceId: string, roles?: string[]): Promise<Auth> {
+  async register(data: registerDto, deviceId: string, roles?: string[], isAdminReg = false): Promise<Auth> {
     // validateFields(data);
 
     if (await this.accountService.checkEmailExists(data.email)) throw createError("Email already exist", 400);
-    const acc = await this.accountService.createAccount(data, roles);
+    const acc = await this.accountService.createAccount(data, roles, isAdminReg);
     const payload = AuthService.transformUserToPayload(acc);
     const { token, expiration } = await this.addToken(payload, deviceId);
     payload.exp = expiration;
-    await this.requestEmailVerification(acc?._id);
+    if (!isAdminReg) await this.requestEmailVerification(acc?._id);
     return { payload, token };
   }
 

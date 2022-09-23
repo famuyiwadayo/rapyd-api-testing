@@ -25,9 +25,9 @@ export type RapydEventTypes = {
   "application:payment:confirmed": { owner: string; txId: string };
 
   // ADMIN COMMENT EVENT TYPES
-  "adminComment:created": { account: string };
-  "adminComment:updated": { account: string };
-  "adminComment:deleted": { account: string };
+  "adminComment:created": { creator: string; account: string };
+  "adminComment:updated": { creator: string; account: string };
+  "adminComment:deleted": { creator: string; account: string };
 };
 
 export class _RapydBus extends _Emittery<RapydEventTypes> {
