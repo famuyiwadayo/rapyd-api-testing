@@ -5,10 +5,10 @@ import { AuthController } from "../controllers";
 const router = Router();
 const controller = new AuthController();
 
-router.post("/register", deviceGuard, controller.register);
 router.post("/login", deviceGuard, controller.login);
-router.post("/login/admin", deviceGuard, controller.adminLogin);
+router.post("/register", deviceGuard, controller.register);
 router.post("/reset", deviceGuard, controller.resetPassword);
+router.post("/login/admin", deviceGuard, controller.adminLogin);
 
 router.post("/verify/email", authGuard, controller.verifyEmail);
 
