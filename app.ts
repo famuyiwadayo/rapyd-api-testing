@@ -82,7 +82,7 @@ const run = async () => {
     new SystemService().ensureSystemServices();
     EventManager.subscribeEvents();
 
-    console.log("\n🐕‍🦺 db connected!");
+    console.log(`\n🐕‍🦺 db connected on localhost:${config.PORT}`);
   } catch (error) {
     console.error(error);
     process.exit(1);
