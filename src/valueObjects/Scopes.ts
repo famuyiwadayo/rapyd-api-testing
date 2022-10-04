@@ -10,6 +10,7 @@ enum PermissionScope {
   WITHDRAW = "withdraw",
   REQUEST = "request",
   APPROVE = "approve",
+  REJECT = "reject",
   MARK = "mark", // mark notification read | unread
   ALL = "*",
 }

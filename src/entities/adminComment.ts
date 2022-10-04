@@ -16,7 +16,7 @@ export class AdminComment extends BaseEntity {
   @prop()
   description: string;
 
-  @prop()
+  @prop({ type: () => String })
   images: string[];
 }
 

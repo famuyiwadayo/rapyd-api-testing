@@ -19,6 +19,11 @@ export enum Template {
   VERIFICATION = "/emails/verification.html",
   RESET_PASSWORD = "/emails/resetPassword.html",
   ADMIN_INVITE = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
+
+  // TODO: create the email templates.
+  GUARANTOR_INVITE = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
+  GUARANTOR_REJECTION = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
+  GUARANTOR_VERFICATION = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
 }
 
 export default class EmailService {
