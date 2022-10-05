@@ -124,4 +124,14 @@ export default class OnboardingController {
       sendError(error, next);
     }
   }
+
+  async reapplyForApplication(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roles, sub } = req.user;
+      const data = await service.reapply(sub, req.params.id, roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
 }

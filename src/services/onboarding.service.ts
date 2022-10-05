@@ -424,6 +424,21 @@ export default class OnboardingService {
     return applic;
   }
 
+  async reapply(sub: string, id: string, roles: string[]) {
+    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.ONBOARDING, [PermissionScope.CREATE]);
+
+    const app = await onboarding.findOne({ _id: id, account: sub }).lean<Onboarding>().exec();
+    if (!app) throw createError("Application not found", 404);
+    if (app && !app?.payment?.paid) throw createError("Application fee has not been paid", 400);
+    if (app.status === ApplicationStatusEnum.DECLINED && !app?.canReapply)
+      throw createError("Sorry you can't reapply for this application", 400);
+
+    return await onboarding
+      .findByIdAndUpdate(app?._id, { status: ApplicationStatusEnum.PENDING }, { new: true })
+      .lean<Onboarding>()
+      .exec();
+  }
+
   // static async exists(value: any, key = "_id") {
   //   return Boolean()
   // }

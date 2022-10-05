@@ -270,6 +270,9 @@ export class Onboarding extends BaseEntity {
 
   @prop()
   rejectionReason: string;
+
+  @prop()
+  canReapply: boolean;
 }
 
 export default getModelForClass(Onboarding);
