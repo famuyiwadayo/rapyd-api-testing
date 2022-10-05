@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { getModelForClass, modelOptions, prop, Ref } from "@typegoose/typegoose";
+import { Account } from "./account";
 import BaseEntity from "./base";
 import { Role } from "./role";
 
