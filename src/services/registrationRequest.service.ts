@@ -3,7 +3,7 @@
 import { nanoid } from "nanoid";
 import { makeRegistrationRequestDto, registerAccountDto } from "../interfaces/dtos";
 import { AvailableResource, AvailableRole, registrationRequest, RegistrationRequest } from "../entities";
-import { createError, setExpiration, validateFields } from "../utils";
+import { createError, removeForcedInputs, setExpiration, validateFields } from "../utils";
 import AccountService from "./auth.service";
 import RoleService from "./role.service";
 import { Auth } from "../interfaces/ros";
@@ -35,6 +35,7 @@ export default class RegistrationRequestService {
   }
 
   public async registerAccount(input: registerAccountDto, deviceId: string): Promise<Auth> {
+    input = removeForcedInputs(input as any, ["account"]);
     validateFields(input, ["email", "firstName", "lastName", "gender", "password", "token"]);
     const request = await registrationRequest
       .findOne({ token: input.token, used: false, expiry: { $gt: Date.now() } })
@@ -44,7 +45,10 @@ export default class RegistrationRequestService {
     if (!request) throw createError("Registration request is invalid", 400);
     if (request.email !== input.email) throw createError("Registration email does not match", 400);
     const auth = await new AccountService().register({ ...input }, deviceId, [request.primaryRole as string], true);
-    await RegistrationRequestService.invalidateRequest(input.token);
+    await Promise.all([
+      RegistrationRequestService.invalidateRequest(input.token),
+      RegistrationRequestService.updateRegistrationAccount(input.token, auth.payload.sub),
+    ]);
     return auth;
   }
 
@@ -63,7 +67,7 @@ export default class RegistrationRequestService {
       PermissionScope.READ,
       PermissionScope.ALL,
     ]);
-    return await registrationRequest.find().lean().exec();
+    return await registrationRequest.find().populate("account").lean().exec();
   }
 
   static async invalidateRequest(token: string): Promise<boolean> {
@@ -72,5 +76,9 @@ export default class RegistrationRequestService {
 
   static generateUniqueToken(): string {
     return nanoid(34);
+  }
+
+  static async updateRegistrationAccount(token: string, account: string) {
+    return await registrationRequest.findOne({ token }, { account }, { new: true }).lean<RegistrationRequest>().exec();
   }
 }

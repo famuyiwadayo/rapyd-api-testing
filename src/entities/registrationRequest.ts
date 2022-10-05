@@ -20,6 +20,9 @@ export class RegistrationRequest extends BaseEntity {
 
   @prop()
   expiry?: number;
+
+  @prop({ ref: () => Account })
+  account: Ref<Account>;
 }
 
 export default getModelForClass(RegistrationRequest);
