@@ -79,6 +79,6 @@ export default class RegistrationRequestService {
   }
 
   static async updateRegistrationAccount(token: string, account: string) {
-    return await registrationRequest.findOne({ token }, { account }, { new: true }).lean<RegistrationRequest>().exec();
+    return await registrationRequest.findOneAndUpdate({ token }, { account }, { new: true }).lean<RegistrationRequest>().exec();
   }
 }
