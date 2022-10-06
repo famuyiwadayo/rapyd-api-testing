@@ -380,7 +380,7 @@ export default class AccountService {
       [PermissionScope.DISABLE, PermissionScope.ALL]
     );
     const data = await account
-      .findOneAndUpdate({ _id: id }, { control: { enabled: false } })
+      .findOneAndUpdate({ _id: id }, { control: { enabled: false } }, { new: true })
       .lean<Account>()
       .exec();
     if (!data) throw createError(`Account not found`, 404);
@@ -397,7 +397,7 @@ export default class AccountService {
       [PermissionScope.ENABLE, PermissionScope.ALL]
     );
     const data = await account
-      .findOneAndUpdate({ _id: id }, { control: { enabled: true } })
+      .findOneAndUpdate({ _id: id }, { control: { enabled: true } }, { new: true })
       .lean<Account>()
       .exec();
     if (!data) throw createError(`Account not found`, 404);

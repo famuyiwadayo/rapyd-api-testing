@@ -6,16 +6,24 @@ import { adminComment, AdminComment, AvailableResource } from "../entities";
 import RoleService from "./role.service";
 
 import { AdminCommentEventListener } from "../listerners";
+import { AdminCommentStatus } from "../entities/adminComment";
 
 export default class AdminCommentService {
   async getAll(roles: string[]): Promise<PaginatedDocument<AdminComment[]>> {
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.READ, PermissionScope.ALL]);
-    return paginate("adminComment", {}, {});
+    return paginate(
+      "adminComment",
+      {},
+      {},
+      {
+        populate: ["creator", "resolver"],
+      }
+    );
   }
 
   async getById(id: string, roles: string[]): Promise<AdminComment> {
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.READ, PermissionScope.ALL]);
-    const comment = await adminComment.findById(id).lean<AdminComment>().exec();
+    const comment = await adminComment.findById(id).populate(["creator", "resolver"]).lean<AdminComment>().exec();
     if (!comment) throw createError("Comment not found", 404);
     return comment;
   }
@@ -45,6 +53,17 @@ export default class AdminCommentService {
       .exec();
     if (!comment) throw createError("Comment not found", 404);
     await RapydBus.emit("adminComment:updated", { creator: sub as string, account: comment?.driver as string });
+    return comment;
+  }
+
+  async resolve(sub: string, id: string, roles: string[]): Promise<AdminComment> {
+    await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.UPDATE, PermissionScope.ALL]);
+    const comment = await adminComment
+      .findByIdAndUpdate(id, { status: AdminCommentStatus.RESOLVED, resolver: sub }, { new: true })
+      .lean<AdminComment>()
+      .exec();
+    if (!comment) throw createError("Comment not found", 404);
+    await RapydBus.emit("adminComment:resolved", { resolver: sub as string, account: comment?.driver as string });
     return comment;
   }
 

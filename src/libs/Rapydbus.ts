@@ -27,6 +27,7 @@ export type RapydEventTypes = {
   // ADMIN COMMENT EVENT TYPES
   "adminComment:created": { creator: string; account: string };
   "adminComment:updated": { creator: string; account: string };
+  "adminComment:resolved": { resolver: string; account: string };
   "adminComment:deleted": { creator: string; account: string };
 };
 

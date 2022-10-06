@@ -41,6 +41,16 @@ export default class AdminCommentController {
     }
   }
 
+  async resolve(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, params } = req;
+      const data = await new AdminCommentService().resolve(user.sub, params.id, user.roles);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, params } = req;
