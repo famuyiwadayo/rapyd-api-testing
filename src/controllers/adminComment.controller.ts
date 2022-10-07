@@ -5,7 +5,7 @@ import { sendError, sendResponse } from "../utils";
 export default class AdminCommentController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await new AdminCommentService().getAll(req.user.roles);
+      const data = await new AdminCommentService().getAll(req.params.id, req.user.roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);

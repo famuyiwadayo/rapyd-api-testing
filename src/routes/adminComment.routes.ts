@@ -5,7 +5,7 @@ import { AdminCommentController } from "../controllers";
 const router = Router();
 const controller = new AdminCommentController();
 
-router.get("/", authGuard, controller.getAll);
+router.get("/:id/driver", authGuard, controller.getAll);
 router.get("/:id", authGuard, controller.getById);
 
 router.post("/", authGuard, controller.create);

@@ -9,11 +9,11 @@ import { AdminCommentEventListener } from "../listerners";
 import { AdminCommentStatus } from "../entities/adminComment";
 
 export default class AdminCommentService {
-  async getAll(roles: string[]): Promise<PaginatedDocument<AdminComment[]>> {
+  async getAll(driverId: string, roles: string[]): Promise<PaginatedDocument<AdminComment[]>> {
     await RoleService.hasPermission(roles, AvailableResource.ADMIN_COMMENT, [PermissionScope.READ, PermissionScope.ALL]);
     return paginate(
       "adminComment",
-      {},
+      { driver: driverId },
       {},
       {
         populate: ["creator", "resolver"],
