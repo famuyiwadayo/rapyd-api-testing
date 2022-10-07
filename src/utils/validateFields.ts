@@ -1,7 +1,7 @@
 import { createError } from ".";
 
 export default function <T>(input: T, requiredFields: (keyof T)[]) {
-  const keys = Object.keys(input as object);
+  const keys = Object.keys(input as any);
   const missingFields: string[] = [];
 
   console.log("Required fields", requiredFields);
