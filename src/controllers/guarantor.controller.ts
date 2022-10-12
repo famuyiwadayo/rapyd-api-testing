@@ -16,7 +16,16 @@ export default class GuarantorController {
 
   async getGuarantors(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await service.getGuarantors(req.params.account, req.user.roles, req.query);
+      const data = await service.getGuarantors(req.user.roles, req.query);
+      sendResponse(res, 200, data);
+    } catch (error) {
+      sendError(error, next);
+    }
+  }
+
+  async getGuarantorById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await service.getGuarantorById(req.params.id, req.user.roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -67,6 +76,15 @@ export default class GuarantorController {
       sendError(error, next);
     }
   }
+
+  // async resendFormLink(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const data = await GuarantorService.sendGuarantorInvite(req.params.id, )
+  //     sendResponse(res, 200, data);
+  //   } catch (error) {
+  //     sendError(error, next);
+  //   }
+  // }
 
   async deleteGuarantor(req: Request, res: Response, next: NextFunction) {
     try {

@@ -12,14 +12,17 @@ import AccessService from "./access.service";
 import RoleService from "./role.service";
 import { IPaginationFilter, PaginatedDocument } from "interfaces/ros";
 import EmailService, { Template } from "./email.service";
-import { isEmpty } from "lodash";
+import { isEmpty, join } from "lodash";
 import RegistrationRequestService from "./registrationRequest.service";
 import { RapydBus } from "../libs";
 
 import { GuarantorEventListerner } from "../listerners";
 
 export default class GuarantorService {
-  async getGuarantors(account: string, roles: string[], filters: IPaginationFilter): Promise<PaginatedDocument<Guarantor[]>> {
+  async getGuarantors(
+    roles: string[],
+    filters?: IPaginationFilter & { account?: string; status?: string }
+  ): Promise<PaginatedDocument<Guarantor[]>> {
     await RoleService.requiresPermission(
       [AvailableRole.SUPERADMIN, AvailableRole.MODERATOR, AvailableRole.FLEET_MANAGER],
       roles,
@@ -27,12 +30,25 @@ export default class GuarantorService {
       [PermissionScope.READ, PermissionScope.ALL]
     );
 
-    const query: { account: string } = { account };
+    let queries: { account?: string; $and?: any[] } = {};
+
+    const statuses = String(filters?.status).split(",");
+
+    if (!!filters?.account) {
+      Object.assign(queries, { account: filters.account });
+    }
+
+    if (filters?.status) {
+      queries = { ...queries, $and: [...(queries?.$and ?? [])] };
+      queries.$and!.push({
+        $or: statuses.map((status) => ({ status })),
+      });
+    }
 
     // const isAdmin = await GuarantorService.hasAdminPrivileges(roles);
     // if (!isAdmin) Object.assign(query, { account: sub });
 
-    return await paginate("guarantor", query, filters);
+    return await paginate("guarantor", queries, filters, { populate: ["account"] });
   }
 
   async getCurrentUserGuarantors(sub: string, roles: string[], filters: IPaginationFilter): Promise<PaginatedDocument<Guarantor[]>> {
@@ -47,6 +63,13 @@ export default class GuarantorService {
     // if (!isAdmin) Object.assign(query, { account: sub });
 
     return await paginate("guarantor", query, filters);
+  }
+
+  async getGuarantorById(id: string, roles: string[]): Promise<Guarantor> {
+    await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.READ, PermissionScope.ALL]);
+    const g = await guarantor.findById(id).populate("account").lean<Guarantor>().exec();
+    if (!g) throw createError("Guarantor not found", 400);
+    return g;
   }
 
   async addGuarantor(sub: string, input: Guarantor, roles: string[]): Promise<Guarantor> {
@@ -231,9 +254,9 @@ export default class GuarantorService {
     await Promise.all(
       guarantors.map((gua) =>
         EmailService.sendEmail("You've been appointed as a guarantor", gua?.email, Template.GUARANTOR_INVITE, {
-          driver_name: driver?.firstName,
+          driver_name: join([driver?.firstName, driver?.lastName], " "),
           name: gua?.email,
-          link: `https://admin.rapydcars.com/guarantor/form?token=${gua?.token}`,
+          link: `https://rapydcars.com/guarantor/form?token=${gua?.token}`,
         })
       )
     );
