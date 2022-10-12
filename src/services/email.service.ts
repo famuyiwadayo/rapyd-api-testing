@@ -16,33 +16,26 @@ import { createError } from "../utils";
 sgMail.setApiKey(config.SENDGRID_KEY);
 
 export enum Template {
-  VERIFICATION = "/emails/verification.html",
+  VERIFICATION = "/emails/verification.html", // {name: '', link: ''}
   RESET_PASSWORD = "/emails/resetPassword.html",
   ADMIN_INVITE = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
 
-  // TODO: create the email templates.
-  GUARANTOR_INVITE = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
-  GUARANTOR_REJECTION = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
-  GUARANTOR_VERFICATION = "/emails/adminRegistrationRequest.html", // needs {link: '', name: ''};
+  // TODO: Test and implement sending the emails
+  GUARANTOR_INVITE = "/emails/guarantorsInvite.html", // needs {link: '', name: '', driver_name: ''}; ❌Tested, ✅ Sent
+  GUARANTOR_REJECTION = "/emails/guarantorRejection.html", // needs {guarantor_name: '', name: ''};  ❌Tested, ✅ Sent
+  GUARANTOR_VERFICATION = "/emails/guarantorVerified.html", // needs {guarantor_name: '', name: ''}; ❌Tested, ✅ Sent
+  INITIAL_PAYMENT = "/emails/initialPayment.html", // needs {amount: '', name: ''}; ❌Tested, ✅ Sent
+  WEEKLY_PAYMENT = "/emails/weeklyPayment.html", // needs {amount: '', name: ''}; ❌Tested, ✅ Sent
+  LOAN_REQUEST = "/emails/loanRequest.html", // needs {name: ''}; ❌Tested, ✅ Sent
+  LOAN_REJECTED = "/emails/loanRejected.html", // needs {name: ''}; ❌Tested, ✅ Sent
+  LOAN_REPAYMENT = "/emails/loanRepayment.html", // needs {amount: '', name: ''}; ❌Tested, ✅ Sent
+  SERVICE_SCHEDULE = "/emails/serviceSchedule.html", // needs {date: '', name: '', location: ''}; ❌Tested, ✅ Sent
+  APPLICATION_APPROVED = "/emails/applicationApproved.html", // needs {name: ''}; ❌Tested, ✅ Sent
+  APPLICATION_REJECTED = "/emails/applicationRejected.html", // needs {name: ''}; ❌Tested, ✅ Sent
+  APPLICATION_UNDER_REVIEW = "/emails/applicationUnderReview.html", // needs {name: ''}; ❌Tested, ✅ Sent
 }
 
 export default class EmailService {
-  // async addToWaitlist(email: string) {
-  //   // console.log("EMAIL", email);
-  //   // const sendSmtpEmail: SendSmtpEmail = {
-  //   //   to: [{ email }],
-  //   //   templateId: 2,
-  //   //   params: {
-  //   //     subject: "Request join waitlist",
-  //   //   },
-  //   // };
-  //   const createContact = new CreateContact();
-  //   createContact.email = email;
-  //   // createContact.listIds
-  //   const res = await apiInstance.createContact(createContact);
-  //   return res;
-  // }
-
   static async sendEmail(subject: string, email: string, _template: Template, data: any) {
     const html = fs.readFileSync(path.join(__dirname, "..", _template.toString())).toString();
 

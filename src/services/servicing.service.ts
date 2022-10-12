@@ -4,6 +4,9 @@ import { CreateServicingDto } from "../interfaces/dtos";
 import RoleService from "./role.service";
 import { IPaginationFilter, PaginatedDocument } from "../interfaces/ros";
 import { createError, paginate, removeForcedInputs, validateFields } from "../utils";
+import { RapydBus } from "../libs";
+
+import { ServicingEventListener } from "../listerners";
 
 export default class ServicingService {
   async getCurrentUserTotalVehicleService(sub: string, roles: string[]): Promise<{ count: number }> {
@@ -27,6 +30,8 @@ export default class ServicingService {
     );
 
     const _ser = await servicing.create({ ...input });
+
+    await RapydBus.emit("servicing:created", { account: input.driver as string, date: input.date, location: input.location });
     return _ser;
   }
 
@@ -118,5 +123,11 @@ export default class ServicingService {
     const _ser = await servicing.findByIdAndDelete(serviceId, { new: true }).lean<Servicing>().exec();
     if (!_ser) throw createError("Service not found", 404);
     return _ser;
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the AccountEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new ServicingEventListener();
   }
 }

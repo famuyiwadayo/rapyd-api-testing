@@ -202,13 +202,14 @@ export default class OnboardingService {
     // );
   }
 
-  async addGuarantors(accountId: string, input: AddGuarantorsDto, roles: string[]): Promise<Onboarding> {
-    await RoleService.requiresPermission(
-      [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
-      roles,
-      AvailableResource.ONBOARDING,
-      [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
-    );
+  async addGuarantors(accountId: string, input: AddGuarantorsDto, roles: string[], dryRun = false): Promise<Onboarding> {
+    if (!dryRun)
+      await RoleService.requiresPermission(
+        [AvailableRole.SUPERADMIN, AvailableRole.DRIVER, AvailableRole.ACCOUNTS_ADMIN, AvailableRole.FLEET_MANAGER],
+        roles,
+        AvailableResource.ONBOARDING,
+        [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
+      );
 
     const data = await onboarding
       .findOneAndUpdate({ account: accountId }, { guarantorInfo: { guarantors: input.guarantors } }, { new: true })
@@ -238,7 +239,17 @@ export default class OnboardingService {
       [PermissionScope.CREATE, PermissionScope.UPDATE, PermissionScope.ALL]
     );
 
+    const guarantorInfo = (await onboarding.findOne({ account: accountId }).select("guarantorInfo").lean<Onboarding>().exec())
+      ?.guarantorInfo;
+    if (!!guarantorInfo) {
+      let guarantors = guarantorInfo?.guarantors;
+      guarantors = (await GuarantorService.SendGuarantorRequestEmails(accountId, guarantors)) as typeof guarantors;
+      await this.addGuarantors(accountId, { guarantors }, roles, true);
+    }
+
     const documents = await OnboardingService.createOrUpdateData("hirePurchaseContract", accountId, input);
+    RapydBus.emit("application:underReview", { owner: documents?.account as string });
+
     return documents;
   }
 

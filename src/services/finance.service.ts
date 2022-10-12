@@ -29,7 +29,7 @@ import {
 } from "../interfaces/ros";
 import { GetPeriodicVehicleInstalmentDto } from "../interfaces/dtos";
 import { createError, getUpdateOptions, paginate, rnd, validateFields } from "../utils";
-import { Loan } from "../libs";
+import { Loan, RapydBus } from "../libs";
 import config from "../config";
 import AccountService from "./account.service";
 import VehicleService from "./vehicle.service";
@@ -39,6 +39,8 @@ import consola from "consola";
 import { isPast } from "date-fns";
 import { clamp, isEmpty } from "lodash";
 import LoanService from "./loan.service";
+
+import { FinanceEventListener } from "../listerners";
 
 export default class FinanceService {
   async getCurrentUserSpreads(
@@ -155,14 +157,17 @@ export default class FinanceService {
       PermissionScope.ALL,
     ]);
 
-    const [fin, loan] = await Promise.all([ finance
-      .findOne({
-        account: sub,
-        category: FinanceCategory.AUTO,
-        item: vehicleId,
-      })
-      .lean<Finance>()
-      .exec(), LoanService.getActiveLoan(sub)  ]);
+    const [fin, loan] = await Promise.all([
+      finance
+        .findOne({
+          account: sub,
+          category: FinanceCategory.AUTO,
+          item: vehicleId,
+        })
+        .lean<Finance>()
+        .exec(),
+      LoanService.getActiveLoan(sub),
+    ]);
 
     if (!fin) throw createError("Vehicle finance details not found");
 
@@ -171,7 +176,6 @@ export default class FinanceService {
     const amountPaid = fin?.amountPaid;
 
     const loanBalance = loan?.balance ?? 0;
-
 
     return {
       finance: fin,
@@ -190,8 +194,8 @@ export default class FinanceService {
         },
         loanBalance: {
           value: loan?.balance ?? 0,
-          percentage: clamp( (loanBalance / total) * 100, 0, 100)
-        }
+          percentage: clamp((loanBalance / total) * 100, 0, 100),
+        },
       },
     };
   }
@@ -267,11 +271,11 @@ export default class FinanceService {
 
     if (fin) {
       if (!fin?.initialDepositPaid && !!fin?.initialDepositPaymentRef) {
-        console.log({initialDepositPaid: fin?.initialDepositPaid, initialDepositPaymentRef: fin?.initialDepositPaymentRef})
+        console.log({ initialDepositPaid: fin?.initialDepositPaid, initialDepositPaymentRef: fin?.initialDepositPaymentRef });
         const paymentStatus = await new PaymentService().checkStatus(fin?.initialDepositPaymentRef);
         if (paymentStatus.data.status !== PaystackChargeStatus.SUCCESS) return await initiatePayment();
       }
-      if(!fin?.initialDepositPaid && isEmpty(fin?.initialDepositPaymentRef ?? "")) {
+      if (!fin?.initialDepositPaid && isEmpty(fin?.initialDepositPaymentRef ?? "")) {
         return await initiatePayment();
       }
 
@@ -322,7 +326,6 @@ export default class FinanceService {
           period: "WEEKLY",
           initialDeposit: acc?.vehicleInfo?.deposit?.amount,
           totalSumWithInterest: inst?.pricePlusInterest,
-
         },
         getUpdateOptions()
       )
@@ -392,6 +395,7 @@ export default class FinanceService {
         .lean<Finance>()
         .exec(),
       FinanceService.spreadVehicleFinances(acc?._id!, remainingDebt, fin),
+      RapydBus.emit("finance:initialPayment", { account: accountId, amount: fin?.initialDeposit }),
     ]);
   }
 
@@ -651,7 +655,14 @@ export default class FinanceService {
     return await Promise.all([
       FinanceService.processSpreadUpdates(fin, amount, txRef, method, fin?.remainingDebt),
       finance.findByIdAndUpdate(fin?._id, updates, { new: true }).lean<Loan>().exec(),
+      RapydBus.emit("finance:weeklyPayment", { account, amount }),
     ]);
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the AccountEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new FinanceEventListener();
   }
 }
 

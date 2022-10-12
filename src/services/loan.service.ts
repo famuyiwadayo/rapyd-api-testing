@@ -9,6 +9,8 @@ import AccessService from "./access.service";
 
 import consola from "consola";
 import TransactionReferenceService from "./transactionReference.service";
+import { RapydBus } from "../libs";
+import { LoanEventListener } from "../listerners";
 
 export default class LoanService {
   async getLoans(
@@ -106,21 +108,28 @@ export default class LoanService {
     if (await LoanService.checkHasALoan(sub)) throw createError("You already have a pending/active loan", 400);
 
     const paybackDate = addDays(new Date(), parseInt(input.duration as string));
-    return await loan.create({
+    const result = await loan.create({
       ...input,
       account: sub,
       paybackDate,
       balance: input.amount,
       amountPaid: 0,
     });
+
+    await RapydBus.emit("loan:request", { account: sub });
+    return result;
   }
 
-  async approveLoan(id: string, roles: string[]): Promise<Loan> {
-    return await LoanService.updateLoanStatus(id, roles, LoanStatus.APPROVED);
+  async approveLoan(sub: string, id: string, roles: string[]): Promise<Loan> {
+    const result = await LoanService.updateLoanStatus(id, roles, LoanStatus.APPROVED);
+    await RapydBus.emit("loan:approved", { account: id, modifier: sub });
+    return result;
   }
 
-  async declineLoan(id: string, roles: string[]): Promise<Loan> {
-    return await LoanService.updateLoanStatus(id, roles, LoanStatus.DECLINED);
+  async declineLoan(sub: string, id: string, roles: string[]): Promise<Loan> {
+    const result = await LoanService.updateLoanStatus(id, roles, LoanStatus.DECLINED);
+    await RapydBus.emit("loan:declined", { account: id, modifier: sub });
+    return result;
   }
 
   static async checkHasALoan(sub: string): Promise<boolean> {
@@ -205,12 +214,20 @@ export default class LoanService {
 
     console.log(updates);
 
-    return await loan.findByIdAndUpdate(l._id, updates, { new: true }).lean<Loan>().exec();
+    const result = await loan.findByIdAndUpdate(l._id, updates, { new: true }).lean<Loan>().exec();
+    await RapydBus.emit("loan:repayment", { account, amount });
+    return result;
   }
 
   static async getActiveLoan(accId: string) {
     const _loan = await loan.findOne({ account: accId, status: LoanStatus.APPROVED }).lean<Loan>().exec();
     if (!loan) return null;
     return _loan;
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the AccountEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new LoanEventListener();
   }
 }

@@ -12,8 +12,11 @@ import AccessService from "./access.service";
 import RoleService from "./role.service";
 import { IPaginationFilter, PaginatedDocument } from "interfaces/ros";
 import EmailService, { Template } from "./email.service";
-import { isEmpty, join } from "lodash";
+import { isEmpty } from "lodash";
 import RegistrationRequestService from "./registrationRequest.service";
+import { RapydBus } from "../libs";
+
+import { GuarantorEventListerner } from "../listerners";
 
 export default class GuarantorService {
   async getGuarantors(account: string, roles: string[], filters: IPaginationFilter): Promise<PaginatedDocument<Guarantor[]>> {
@@ -57,6 +60,7 @@ export default class GuarantorService {
 
     if (await GuarantorService.checkGuarantorExistsByEmail(input.email)) throw createError("Guarantor already exists", 403);
     const g = await guarantor.create({ ...input, account: sub });
+    await RapydBus.emit("guarantor:added", { account: sub, guarantor: { email: input.email } as any });
     return g;
   }
 
@@ -73,6 +77,7 @@ export default class GuarantorService {
     const isAdmin = await GuarantorService.hasAdminPrivileges(roles);
     if (!isAdmin && (await AccessService.documentBelongsToAccount(sub, id, "guarantor"))) Object.assign(query, { account: sub });
 
+    await RapydBus.emit("guarantor:deleted", { account: sub, guarantorId: id });
     return await guarantor.findOneAndDelete(query, { new: true }).lean<Guarantor>().exec();
   }
 
@@ -106,9 +111,13 @@ export default class GuarantorService {
 
     const driver = g.account as Account;
     if (!driver) throw createError("Driver's information not found", 404);
+
+    await RapydBus.emit("guarantor:verified", { account: g?.account as string, guarantor: g });
+
+    // TODO: Can be moved to the guarantor.listener verified event
     await EmailService.sendEmail(`Your guarantor ${g?.name} has been verified`, driver.email, Template.GUARANTOR_VERFICATION, {
-      name: join([driver?.firstName, driver?.lastName], " "),
-      link: `https://admin.rapydcars.com/guarantor/form?token=${g?.token}`,
+      name: driver?.firstName,
+      guarantor_name: g?.name ?? "",
     });
 
     return g;
@@ -127,9 +136,13 @@ export default class GuarantorService {
 
     const driver = g.account as Account;
     if (!driver) throw createError("Driver's information not found", 404);
+
+    await RapydBus.emit("guarantor:rejected", { account: g?.account as string, guarantor: g });
+
+    // TODO: Can be moved to the guarantor.listener rejected event
     await EmailService.sendEmail(`Your guarantor ${g?.name} has been rejected`, driver.email, Template.GUARANTOR_REJECTION, {
-      name: join([driver?.firstName, driver?.lastName], " "),
-      link: `https://admin.rapydcars.com/guarantor/form?token=${g?.token}`,
+      name: driver?.firstName,
+      guarantor_name: g?.name ?? "",
     });
 
     return g;
@@ -157,6 +170,8 @@ export default class GuarantorService {
       .findByIdAndUpdate(g?._id, { ...input, $inc: { attempts: 1 } }, { new: true })
       .lean<Guarantor>()
       .exec();
+
+    await RapydBus.emit("guarantor:form:attempted", { account: String(g?.account), guarantor: g });
     return result;
   }
 
@@ -179,13 +194,33 @@ export default class GuarantorService {
     guarantors: Omit<Guarantor, "createdAt" | "updatedAt">[]
   ): Promise<Guarantor[]> {
     let g = guarantors.map((g) => ({ ...g, account: accountId }));
-    g = (await this.SendGuarantorRequestEmails(accountId, guarantors)) as typeof g;
+    // g = (await this.SendGuarantorRequestEmails(accountId, guarantors)) as typeof g;
     return await guarantor.insertMany([...g], { lean: true });
   }
 
-  private static async SendGuarantorRequestEmails(driverId: string, guarantors: Omit<Guarantor, "createdAt" | "updatedAt">[]) {
+  static async sendGuarantorInvite(
+    driverId: string,
+    guarantors: Omit<Guarantor, "createdAt" | "updatedAt">[],
+    roles: string[],
+    dryRun = false
+  ) {
     if (isEmpty(guarantors)) return;
-    const driver = await account.findById(driverId).select(["firstName", "lastName"]).lean<Account>().exec();
+
+    if (!dryRun) await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.READ, PermissionScope.ALL]);
+    const g = (await this.SendGuarantorRequestEmails(driverId, guarantors)) as Guarantor[];
+    await Promise.all(
+      g?.map((vals) =>
+        guarantor
+          .findOneAndUpdate({ email: vals.name }, { ...vals })
+          .lean<Guarantor>()
+          .exec()
+      )
+    );
+  }
+
+  static async SendGuarantorRequestEmails(driverId: string, guarantors: Omit<Guarantor, "createdAt" | "updatedAt">[]) {
+    if (isEmpty(guarantors)) return;
+    const driver = await account.findById(driverId).select(["firstName"]).lean<Account>().exec();
 
     // guarantor's token will expire in 15days.
     guarantors = guarantors.map((g) => ({
@@ -196,12 +231,19 @@ export default class GuarantorService {
     await Promise.all(
       guarantors.map((gua) =>
         EmailService.sendEmail("You've been appointed as a guarantor", gua?.email, Template.GUARANTOR_INVITE, {
-          name: join([driver?.firstName, driver?.lastName], " "),
+          driver_name: driver?.firstName,
+          name: gua?.email,
           link: `https://admin.rapydcars.com/guarantor/form?token=${gua?.token}`,
         })
       )
     );
 
     return guarantors;
+  }
+
+  // Typescript will compile this anyways, we don't need to invoke the mountEventListener.
+  // When typescript compiles the AccountEventListener, the addEvent decorator will be executed.
+  static mountEventListener() {
+    new GuarantorEventListerner();
   }
 }

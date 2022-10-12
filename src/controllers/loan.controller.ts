@@ -48,7 +48,7 @@ export default class LoanController {
   async approveLoan(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, params } = req;
-      const data = await service.approveLoan(params.id, user.roles);
+      const data = await service.approveLoan(user.sub, params.id, user.roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
@@ -58,7 +58,7 @@ export default class LoanController {
   async declineLoan(req: Request, res: Response, next: NextFunction) {
     try {
       const { user, params } = req;
-      const data = await service.declineLoan(params.id, user.roles);
+      const data = await service.declineLoan(user.sub, params.id, user.roles);
       sendResponse(res, 200, data);
     } catch (error) {
       sendError(error, next);
