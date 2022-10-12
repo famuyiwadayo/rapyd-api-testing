@@ -24,6 +24,9 @@ export class Guarantor extends BaseEntity {
   documents: string[];
 
   @prop()
+  position: string;
+
+  @prop()
   signedLetter: string;
 
   @prop({ type: () => String })
