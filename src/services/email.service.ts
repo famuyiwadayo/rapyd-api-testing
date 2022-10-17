@@ -22,7 +22,7 @@ export enum Template {
 
   // TODO: Test and implement sending the emails
   GUARANTOR_INVITE = "/emails/guarantorsInvite.html", // needs {link: '', name: '', driver_name: ''}; ❌Tested, ✅ Sent
-  GUARANTOR_REJECTION = "/emails/guarantorRejection.html", // needs {guarantor_name: '', name: ''};  ❌Tested, ✅ Sent
+  GUARANTOR_REJECTION = "/emails/guarantorRejected.html", // needs {guarantor_name: '', name: ''};  ❌Tested, ✅ Sent
   GUARANTOR_VERFICATION = "/emails/guarantorVerified.html", // needs {guarantor_name: '', name: ''}; ❌Tested, ✅ Sent
   INITIAL_PAYMENT = "/emails/initialPayment.html", // needs {amount: '', name: ''}; ❌Tested, ✅ Sent
   WEEKLY_PAYMENT = "/emails/weeklyPayment.html", // needs {amount: '', name: ''}; ❌Tested, ✅ Sent

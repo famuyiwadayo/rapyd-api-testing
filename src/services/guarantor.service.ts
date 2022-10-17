@@ -117,22 +117,23 @@ export default class GuarantorService {
 
   public async verifyGuarantor(id: string, roles: string[]): Promise<Guarantor> {
     await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.VERIFY, PermissionScope.ALL]);
-    let g = await guarantor.findById(id).populate("account").lean<Guarantor>().exec();
+    let g = await guarantor.findById(id).lean<Guarantor>().exec();
     if (!g) throw createError("Guarantor not found", 404);
-    if (g?.attempts < 1) throw createError("Guarantor form has not been updated", 403);
+    if (!g?.attempts || g?.attempts < 1) throw createError("Guarantor form has not been updated", 403);
 
     g = await guarantor
       .findByIdAndUpdate(id, { status: GuarantorVerificationStatus.VERIFIED }, { new: true })
+      .populate("account")
       .lean<Guarantor>()
       .exec();
 
-    const driver = g.account as Account;
+    const driver = g?.account as Account;
     if (!driver) throw createError("Driver's information not found", 404);
 
-    await RapydBus.emit("guarantor:verified", { account: g?.account as string, guarantor: g });
+    await RapydBus.emit("guarantor:verified", { account: driver?._id as string, guarantor: g });
 
     // TODO: Can be moved to the guarantor.listener verified event
-    await EmailService.sendEmail(`Your guarantor ${g?.name} has been verified`, driver.email, Template.GUARANTOR_VERFICATION, {
+    await EmailService.sendEmail(`Your guarantor ${g?.name} has been verified`, driver?.email, Template.GUARANTOR_VERFICATION, {
       name: driver?.firstName,
       guarantor_name: g?.name ?? "",
     });
@@ -142,22 +143,23 @@ export default class GuarantorService {
 
   public async rejectGuarantor(id: string, roles: string[]): Promise<Guarantor> {
     await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.REJECT, PermissionScope.ALL]);
-    let g = await guarantor.findById(id).populate("account").lean<Guarantor>().exec();
+    let g = await guarantor.findById(id).lean<Guarantor>().exec();
     if (!g) throw createError("Guarantor not found", 404);
-    if (g?.attempts < 1) throw createError("Guarantor form has not been updated", 403);
+    if (!g?.attempts || g?.attempts < 1) throw createError("Guarantor form has not been updated", 403);
 
     g = await guarantor
       .findByIdAndUpdate(id, { status: GuarantorVerificationStatus.REJECTED }, { new: true })
+      .populate("account")
       .lean<Guarantor>()
       .exec();
 
-    const driver = g.account as Account;
+    const driver = g?.account as Account;
     if (!driver) throw createError("Driver's information not found", 404);
 
-    await RapydBus.emit("guarantor:rejected", { account: g?.account as string, guarantor: g });
+    await RapydBus.emit("guarantor:rejected", { account: driver?._id as string, guarantor: g });
 
     // TODO: Can be moved to the guarantor.listener rejected event
-    await EmailService.sendEmail(`Your guarantor ${g?.name} has been rejected`, driver.email, Template.GUARANTOR_REJECTION, {
+    await EmailService.sendEmail(`Your guarantor ${g?.name} has been rejected`, driver?.email, Template.GUARANTOR_REJECTION, {
       name: driver?.firstName,
       guarantor_name: g?.name ?? "",
     });
@@ -196,7 +198,7 @@ export default class GuarantorService {
     const request = await guarantor.findOne({ token }).lean().exec();
     if (!request) throw createError("Guarantor not found", 404);
     if ((request && Date.now() > request.expiry!) || request?.used! === true) {
-      GuarantorService.invalidateRequest(token);
+      await GuarantorService.invalidateRequest(token);
       throw createError("Guarantor form link has expired, please request another one.", 401);
     }
     return request!;
