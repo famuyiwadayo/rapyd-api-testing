@@ -52,10 +52,7 @@ export default class GuarantorService {
   }
 
   async getCurrentUserGuarantors(sub: string, roles: string[], filters: IPaginationFilter): Promise<PaginatedDocument<Guarantor[]>> {
-    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.GUARANTOR, [
-      PermissionScope.READ,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.CREATE, PermissionScope.ALL]);
 
     const query: { account: string } = { account: sub };
 
@@ -76,10 +73,7 @@ export default class GuarantorService {
     input = removeForcedInputs(input, ["_id", "createdAt", "updatedAt"]);
     validateFields(input, ["email"]);
 
-    await RoleService.requiresPermission([AvailableRole.DRIVER], roles, AvailableResource.GUARANTOR, [
-      PermissionScope.CREATE,
-      PermissionScope.ALL,
-    ]);
+    await RoleService.hasPermission(roles, AvailableResource.GUARANTOR, [PermissionScope.CREATE, PermissionScope.ALL]);
 
     if (await GuarantorService.checkGuarantorExistsByEmail(input.email)) throw createError("Guarantor already exists", 403);
     const g = await guarantor.create({ ...input, account: sub });
@@ -234,7 +228,7 @@ export default class GuarantorService {
     await Promise.all(
       g?.map((vals) =>
         guarantor
-          .findOneAndUpdate({ email: vals.name }, { ...vals })
+          .findOneAndUpdate({ email: vals.email }, { ...vals })
           .lean<Guarantor>()
           .exec()
       )
