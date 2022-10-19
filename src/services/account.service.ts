@@ -452,6 +452,8 @@ export default class AccountService {
 
     const acc = await account.findOne(where).lean().exec();
     if (!acc) throw createError("Account not found", 404);
+    if (!acc?.control?.enabled) throw createError("Account suspended, please contact the administrator", 404);
+
     const roles = acc?.roles?.map((role) => String(role));
     if (admin && !(await RoleService.isAdmin(roles))) throw createError("❌ Access Denied", 401);
     if (!(await this.passwordService.checkPassword(acc._id!, password))) throw createError("Incorrect password", 401);
