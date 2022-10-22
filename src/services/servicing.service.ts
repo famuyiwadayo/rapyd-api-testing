@@ -31,7 +31,7 @@ export default class ServicingService {
 
     const _ser = await servicing.create({ ...input });
 
-    await RapydBus.emit("servicing:created", { account: input.driver as string, date: input.date, location: input.location });
+    await RapydBus.emit("servicing:created", { account: input.driver as string, date: String(input.date), location: input.location });
     return _ser;
   }
 

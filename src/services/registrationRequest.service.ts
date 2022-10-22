@@ -67,7 +67,7 @@ export default class RegistrationRequestService {
       PermissionScope.READ,
       PermissionScope.ALL,
     ]);
-    return await registrationRequest.find().populate("account").lean().exec();
+    return await registrationRequest.find().populate("account").sort({ createdAt: -1 }).lean().exec();
   }
 
   static async invalidateRequest(token: string): Promise<boolean> {

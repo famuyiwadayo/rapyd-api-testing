@@ -39,7 +39,7 @@ export type RapydEventTypes = {
   "guarantor:form:attempted": { account: string; guarantor: Guarantor };
 
   // SERVICING EVENT TYPES
-  "servicing:created": { account: string; date: Date; location: string };
+  "servicing:created": { account: string; date: string; location: string };
 
   // LOAN EVENT TYPES
   "loan:paid": { account: string };
